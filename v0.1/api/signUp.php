@@ -3,7 +3,12 @@
     $data = file_get_contents('php://input');
     $data = json_decode($data, true);
     $Utility = new Utility;
-    if ($Utility->validatePayload($data)) {
-       
-        exit;
-    }
+    // if ($Utility->validatePayload($data)) {
+    //     return false;
+    // }
+
+    $new = new  Mailer;
+
+
+
+    $var = $new->sendOTPToken();

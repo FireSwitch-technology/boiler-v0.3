@@ -14,19 +14,26 @@ class Auth
     $this->conn = $database->connect();
   }
 
-/**
- * authenticate Api Key
- *
- * @param string $api_key
- * @return boolean
- */
+  /**
+   * authenticate Api Key
+   *
+   * @param string $api_key
+   * @return boolean
+   */
   public   function authenticateAPIKey($api_key)
   {
+   
+    if (!$api_key) {
+      http_response_code(401);
+      $this->outputData(false, 'Invalid Authorization header format', null);
+      return false;
+  }
+
     if (empty($api_key)) {
 
       http_response_code(400);
       $this->outputData(false, 'missing API key', null);
-      exit;
+      return false;
     }
 
     $apptoken = $this->validateApiKey($api_key);
@@ -43,42 +50,35 @@ class Auth
   }
 
 
-/**
- * Validate Api Key
- *
- * @param string $api_key
- * @return boolean
- */
-  private    function validateApiKey($api_key)
+  /**
+   * Validate Api Key
+   *
+   * @param string $api_key
+   * @return boolean
+   */
+  private function validateApiKey($api_key)
   {
-
-    $sql = "SELECT apptoken
-    FROM apptoken
-    WHERE apptoken = :apptoken";
-
-    $stmt = $this->conn->prepare($sql);
-
-    $stmt->bindParam(':apptoken', $api_key);
-
-    $stmt->execute();
-
-    if ($stmt->rowCount() == 0) {
-
-      $stmt = null;
-      $_SESSION['err'] = "No app found.";
-      return false;
-      // code...
-    } else {
-
-      if ($biz = $stmt->fetchAll(PDO::FETCH_ASSOC)) {
-
-
-        return true;
+      $isvalidateApiKey = false;
+  
+      $sql = "SELECT apptoken FROM apptoken WHERE apptoken = :apptoken";
+      $stmt = $this->conn->prepare($sql);
+      $stmt->bindParam(':apptoken', $api_key);
+      $stmt->execute();
+  
+      if ($stmt->rowCount() == 0) {
+          $stmt = null;
+          $_SESSION['err'] = "No app found.";
+          $isvalidateApiKey = false;
       } else {
-        return false;
+          if ($biz = $stmt->fetchAll(PDO::FETCH_ASSOC)) {
+              $isvalidateApiKey = true;
+          } else {
+              $isvalidateApiKey = false;
+          }
       }
-    }
+      return $isvalidateApiKey;
   }
+  
 
   public   function outputData($success = null, $message = null, $data = null)
   {
@@ -90,8 +90,4 @@ class Auth
     );
     echo json_encode($arr_output);
   }
-
-
-
-
 }

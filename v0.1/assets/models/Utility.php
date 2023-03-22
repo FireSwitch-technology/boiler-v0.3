@@ -282,7 +282,6 @@ class Utility
       $return = json_encode($array);
       echo "$return";
       http_response_code(400);
-      exit();
     }
   }
 
