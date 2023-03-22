@@ -46,7 +46,6 @@ class Database{
 
 
 
-define("APPNAME", 'Boiler');
 
 
 ?>
