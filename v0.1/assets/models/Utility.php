@@ -7,7 +7,7 @@ $timestamp = time();
 # DECODE THE HTMLSPECIAL STRING IN TO STRING
 # -----------------------------------------------------------------------*/
 
-class Utility 
+class Utility
 {
   public function escape_data($data)
   {
@@ -234,13 +234,10 @@ class Utility
     return $result;
   }
 
-
-
-
   public function validateParams()
   {
 
-     http_response_code(400);
+    http_response_code(400);
     $this->outputData(false, 'Invalid parameter', null);
     exit;
   }
@@ -273,7 +270,7 @@ class Utility
       return false;
     }
   }
-  public  function validatePayload($data)
+  public function validatePayload($data)
   {
 
     if (!isset($data)) {
@@ -296,7 +293,7 @@ class Utility
     echo json_encode($arr_output);
   }
 
-  public function randomDigit()
+  public function token()
   {
 
     $defaultPassword = mt_rand(100000, 999999);
@@ -309,10 +306,10 @@ class Utility
     global $type;
 
     $cardtype = array(
-      "visa"       => "/^4[0-9]{12}(?:[0-9]{3})?$/",
+      "visa" => "/^4[0-9]{12}(?:[0-9]{3})?$/",
       "mastercard" => "/^5[1-5][0-9]{14}$/",
-      "amex"       => "/^3[47][0-9]{13}$/",
-      "discover"   => "/^6(?:011|5[0-9]{2})[0-9]{12}$/",
+      "amex" => "/^3[47][0-9]{13}$/",
+      "discover" => "/^6(?:011|5[0-9]{2})[0-9]{12}$/",
     );
 
     if (preg_match($cardtype['visa'], $number)) {
@@ -338,7 +335,7 @@ class Utility
     $bvn = "  /^[0-9]{11}$/";
 
     if (preg_match($bvn, $UserBvn)) {
-      return  true;
+      return true;
     } else {
 
       return false;
@@ -351,7 +348,7 @@ class Utility
     $nin = "/^[0-9]{11}$/";
 
     if (preg_match($nin, $UserNin)) {
-      return  true;
+      return true;
     } else {
 
       return false;
@@ -364,7 +361,7 @@ class Utility
     $dateType = "/^(0[1-9]|1[0-2])\/?([0-9]{4}|[0-9]{2})$/";
 
     if (preg_match($dateType, $date)) {
-      return  true;
+      return true;
     } else {
 
       return false;
@@ -377,7 +374,7 @@ class Utility
     $Cvv = "/^[0-9]{3,4}$/";
 
     if (preg_match($Cvv, $cvv)) {
-      return  true;
+      return true;
     } else {
 
       return false;
@@ -389,7 +386,7 @@ class Utility
 
     $current_date = date("Y-m-d");
     $three_months_ahead = date("Y-m-d", strtotime($current_date . $package));
-    return  $three_months_ahead;
+    return $three_months_ahead;
   }
 
   public function getAllMonthsToPay($package)
@@ -409,7 +406,7 @@ class Utility
   public function convertDateToTimeStamp($prefterredDate)
   {
     $timestamp = strtotime($prefterredDate);
-    return  $timestamp;
+    return $timestamp;
   }
 
   public function convertTimeStampToRealDate($prefterredDate)

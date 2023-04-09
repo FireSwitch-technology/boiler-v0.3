@@ -1,87 +1,103 @@
-<?php
+public function registerUser( array $data )
+ {
+        $utility = new Utility();
 
+        #  Check for params  if matches required parametes
+        $validKeys = [ 'name', 'mail', 'phone', 'address', 'pword' ];
+        $invalidKeys = array_diff( array_keys( $data ), $validKeys );
+        if ( !empty( $invalidKeys ) ) {
+            foreach ( $invalidKeys as $key ) {
+                $errors[] = "$key is not a valid input field";
+            }
 
+            if ( !empty( $errors ) ) {
 
-class Auth
-{
+                $this->respondUnprocessableEntity( $errors );
+                return;
+            }
 
+        }
 
-  private  static $conn;
+        #  Check for fields if empty
+        foreach ( $validKeys as $key ) {
+            if ( empty( $data[ $key ] ) ) {
+                $errors[] = ( $key ) . ' is required';
+            }
+            if ( !empty( $errors ) ) {
 
+                $this->respondUnprocessableEntity( $errors );
+                return;
+            }
+        }
 
-  public function __construct(Database $database)
-  {
-    self::$conn = $database->connect();
-  }
+        $phone = ( int ) $data[ 'phone' ];
 
-  public static  function authenticateAPIKey($api_key): bool
-  {
-    if (empty($api_key)) {
+        $checkIfMailExists = $this->checkIfMailExists( $data[ 'mail' ] );
+        if ( $checkIfMailExists ) {
+            $output = $this->outputData( false, 'Email already exists', null );
+            return;
+        }
+        $token = (int) $utility->token();
+        $pword_hash = password_hash($data[ 'pword' ], PASSWORD_DEFAULT);
 
-      http_response_code(400);
-      self::outputData(false, 'missing API key', null);
-      exit;
+        #  Prepare the fields and values for the insert query
+        $fields = [
+            'name' => $data[ 'name' ],
+            'mail' => $data[ 'mail' ],
+            'phone' => $phone,
+            'address' => $data[ 'address' ],
+            // 'pword' => $pword_hash,
+            // 'usertoken' => $token
+        ];
+
+        # Build the SQL query
+        $placeholders = implode( ', ', array_fill( 0, count( $fields ), '?' ) );
+        $columns = implode( ', ', array_keys( $fields ) );
+        $sql = "INSERT INTO tblusers ($columns) VALUES ($placeholders)";
+
+        #  Execute the query and handle any errors
+        try {
+            $stmt =  $this->conn->prepare( $sql );
+            $i = 1;
+            foreach ( $fields as $value ) {
+                $type = is_int( $value ) ? PDO::PARAM_INT : PDO::PARAM_STR;
+                $stmt->bindValue( $i,  $this->sanitizeInput( $value ), $type );
+                $i++;
+            }
+            $stmt->execute();
+
+            unset( $utility );
+            #In order to free up memories, remmeber to  terminate   classes after instanciation..
+
+            $mailer = new Mailer();
+
+            if ( $mailer->sendOTPToken( $data[ 'mail' ], $data[ 'name' ], '123' ) ) {
+                unset( $mailer );
+                #In order to free up memories, remmeber to  terminate   classes after instanciation..
+            }
+
+            $this->conn = null;
+
+            http_response_code( 201 );
+            $output = $this->outputData( true, 'Account created', null );
+        } catch ( PDOException $e ) {
+
+            $output = $utility->outputData( false, 'Error: ' . $e->getMessage(), null );
+        }
+
+        return $output;
     }
 
-    $apptoken = self::validateApiKey($api_key);
+    public function updateUser() {
 
-    if ($apptoken === false) {
-
-      http_response_code(401);
-      self::outputData(false, $_SESSION['err'], null);
-      return false;
     }
 
+    /**
+    * Save Profile Image
+    *
+    * @param [ type ] $propertyimage
+    * @return array
+    */
 
-    return true;
-  }
-
-
-
-  private  static  function validateApiKey($api_key): bool
-  {
-
-    $sql = "SELECT apptoken
-    FROM apptoken
-    WHERE apptoken = :apptoken";
-
-    $stmt = self::$conn->prepare($sql);
-
-    $stmt->bindParam(':apptoken', $api_key);
-
-    $stmt->execute();
-
-    if ($stmt->rowCount() == 0) {
-
-      $stmt = null;
-      $_SESSION['err'] = "No app found.";
-      return false;
-      // code...
-    } else {
-
-      if ($biz = $stmt->fetchAll(PDO::FETCH_ASSOC)) {
-
-
-        return true;
-      } else {
-        return false;
-      }
-    }
-  }
-
-
-
-
-
-
-  public static  function outputData($success = null, $message = null, $data = null)
-  {
-
-    $arr_output = array(
-      'success' => $success,
-      'message' => $message,
-      'data' => $data,
-    );
-    echo json_encode($arr_output);
-  }
-}
+    public function saveProfileImage( $profileImage )
+ {

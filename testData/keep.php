@@ -11,9 +11,38 @@ class Users
         $this->conn = $database->connect();
     }
 
+    
     public function registerUser( array $data )
  {
         $utility = new Utility();
+
+        #  Check for params  if matches required parametes
+        $validKeys = [ 'name', 'mail', 'phone', 'address', 'pword' ];
+        $invalidKeys = array_diff( array_keys( $data ), $validKeys );
+        if ( !empty( $invalidKeys ) ) {
+            foreach ( $invalidKeys as $key ) {
+                $errors[] = "$key is not a valid input field";
+            }
+
+            if ( !empty( $errors ) ) {
+
+                $this->respondUnprocessableEntity( $errors );
+                return;
+            }
+
+        }
+
+        #  Check for fields if empty
+        foreach ( $validKeys as $key ) {
+            if ( empty( $data[ $key ] ) ) {
+                $errors[] = ( $key ) . ' is required';
+            }
+            if ( !empty( $errors ) ) {
+
+                $this->respondUnprocessableEntity( $errors );
+                return;
+            }
+        }
 
         $phone = ( int ) $data[ 'phone' ];
 
@@ -22,15 +51,14 @@ class Users
             $output = $this->outputData( false, 'Email already exists', null );
             return;
         }
-        $token = ( int ) $utility->token();
-        $passHash = password_hash( $data[ 'pword' ], PASSWORD_DEFAULT );
+        $token = $utility->token();
+
         #  Prepare the fields and values for the insert query
         $fields = [
             'name' => $data[ 'name' ],
             'mail' => $data[ 'mail' ],
             'phone' => $phone,
             'address' => $data[ 'address' ],
-            'pword'  => $passHash,
             'usertoken' => $token
         ];
 
@@ -41,7 +69,7 @@ class Users
 
         #  Execute the query and handle any errors
         try {
-            $stmt =  $this->conn->prepare( $sql );
+            $stmt =  $this->conn->prepare($sql);
             $i = 1;
             foreach ( $fields as $value ) {
                 $type = is_int( $value ) ? PDO::PARAM_INT : PDO::PARAM_STR;
@@ -57,17 +85,16 @@ class Users
 
             if ( $mailer->sendOTPToken( $data[ 'mail' ], $data[ 'name' ], '123' ) ) {
                 unset( $mailer );
+                #In order to free up memories, remmeber to  terminate   classes after instanciation..
             }
+
+            $this->conn = null;
 
             http_response_code( 201 );
             $output = $this->outputData( true, 'Account created', null );
         } catch ( PDOException $e ) {
 
             $output = $utility->outputData( false, 'Error: ' . $e->getMessage(), null );
-        }
-        finally {
-            $this->conn = null;
-
         }
 
         return $output;
@@ -132,7 +159,7 @@ class Users
     * @param [ type ] $input
     * @return string
     */
-    public  function sanitizeInput( $input )
+    private  function sanitizeInput( $input )
  {
         # Remove white space from beginning and end of string
         $input = trim( $input );
@@ -173,12 +200,12 @@ class Users
             $fields[ 'name' ] = [ $data[ 'name' ], PDO::PARAM_STR ];
         }
 
-        if ( array_key_exists( 'priority', $data ) ) {
-            $type = $data[ 'priority' ] === null ? PDO::PARAM_NULL : PDO::PARAM_INT;
-            $fields[ 'priority' ] = [ $data[ 'priority' ], $type ];
+        if ( array_key_exists( 'phone', $data ) ) {
+            $type = $data[ 'phone' ] === null ? PDO::PARAM_NULL : PDO::PARAM_INT;
+            $fields[ 'phone' ] = [ $data[ 'phone' ], $type ];
         }
 
-        if ( array_key_exists( 'is_completed', $data ) ) {
+        if ( array_key_exists( 'address', $data ) ) {
             $fields[ 'is_completed' ] = [ $data[ 'is_completed' ], PDO::PARAM_BOOL ];
         }
 
@@ -189,7 +216,7 @@ class Users
             $params = [];
             foreach ( $fields as $name => $values ) {
                 $sql .= "$name = ?, ";
-                $params[] = $values[ 0 ];
+                $params[] = $this->sanitizeInput( $values[ 0 ] );
             }
 
             $sql = rtrim( $sql, ', ' ) . ' WHERE id = ?';
@@ -209,13 +236,13 @@ class Users
     * @return void
     */
 
-    public function respondUnprocessableEntity( array $errors ): void
+    private function respondUnprocessableEntity( array $errors ): void
  {
         http_response_code( 422 );
         $this->outputData( false,  'Unable to process requests',  $errors );
     }
 
-    private function checkIfMailExists( string $mail ): bool {
+    private function checkIfMailExists( $mail ) {
 
         try {
             $sql = 'SELECT mail FROM tblusers WHERE mail = :mail';
@@ -232,15 +259,45 @@ class Users
             $this->outputData( false, 'An error occurred while executing the query'.$_SESSION[ 'err' ], null );
         }
         finally {
-            $stmt = null;
+            $this->conn = null;
+            #   Terminate the database connection
         }
+    }
+
+    public function forgetPassword( $mail ) {
+
     }
 
     #Update Password:: This function updates a user Password
 
     public function updatePassword( $data ): void
  {
+        $validKeys = [ 'usertoken', 'fpword', 'npword' ];
+        $errors = [];
 
+        #   Check if only valid input fields are provided
+        $invalidKeys = array_diff( array_keys( $data ), $validKeys );
+        if ( !empty( $invalidKeys ) ) {
+            foreach ( $invalidKeys as $key ) {
+                $errors[] = "$key is not a valid input field";
+            }
+            if ( !empty( $errors ) ) {
+                $this->respondUnprocessableEntity( $errors );
+                return;
+            }
+        }
+
+        #   Check if required fields are empty
+        foreach ( $validKeys as $key ) {
+            if ( empty( $data[ $key ] ) ) {
+                $errors[] = ( $key ) . ' is required';
+            }
+        }
+
+        if ( !empty( $errors ) ) {
+            $this->respondUnprocessableEntity( $errors );
+            return;
+        }
         try {
             $sql = 'SELECT pword FROM tblusers WHERE usertoken = :usertoken';
             $stmt = $this->conn->prepare( $sql );
@@ -256,12 +313,10 @@ class Users
                         $this->outputData( false, $_SESSION[ 'err' ], null );
                         return;
                     }
-                    $this->outputData( true, 'Password Updated', null );
-                    return;
+                    echo 'done';
 
                 } else {
                     $this->outputData( false, 'Current Password specified is not correct', null );
-                    return;
                 }
             }
         } catch ( PDOException $e ) {
@@ -269,16 +324,14 @@ class Users
             $this->outputData( false, 'An error occurred while executing the query'.$_SESSION[ 'err' ], null );
         }
         finally {
-            $stmt = null;
             $this->conn = null;
-
             #   Terminate the database connection
         }
     }
 
     # updatePasswordInDB::This function Updates users ppassword....
 
-    private  function updatePasswordInDB( string $pword, int $usertoken ): bool
+    public function updatePasswordInDB( string $pword, int $usertoken ): bool
  {
         try {
             $sql = 'UPDATE tblusers SET pword = :pword WHERE usertoken = :usertoken';
@@ -291,93 +344,7 @@ class Users
             $_SESSION[ 'err' ] = $e->getMessage();
             return false;
         }
-        finally {
-            $stmt = null;
-            $this->conn = null;
-        }
     }
-
-    public function forgetPword( array $data ):bool {
-
-        $checkIfMailExists = $this->checkIfMailExists( $data[ 'mail' ] );
-        if ( !$checkIfMailExists ) {
-            $this->outputData( false, 'Email does not exists', null );
-            return false;
-
-        }
-        $utility = new Utility();
-        $token = $utility->token();
-        $passHash = password_hash( $token, PASSWORD_DEFAULT );
-
-        if ( !$this->resetPasswordInDB( $passHash, $data[ 'mail' ] ) ) {
-            $this->outputData( false, $_SESSION[ 'err' ], null );
-            return false;
-        }
-
-        $mailer = new Mailer;
-        $userData = $this->getUserData($data['mail']);
-
-        try {
-            if ( $mailer->sendPasswordToUser( $data[ 'mail' ], $userData['name'], $token ) ) {
-                $this->outputData( true, 'Password sent to mail', null );
-                return true;
-
-            }
-        } catch ( PDOException $e ) {
-            $_SESSION[ 'err' ] = $e->getMessage();
-        }
-        finally {
-            unset( $mailer );
-            unset( $utility );
-        }
-
-    }
-
-    private function resetPasswordInDB( string $pword, string $mail ): bool
- {
-        try {
-            $sql = 'UPDATE tblusers SET pword = :pword WHERE mail = :mail';
-            $stmt = $this->conn->prepare( $sql );
-            $stmt->bindParam( ':pword', $pword );
-            $stmt->bindParam( ':mail', $mail );
-            $stmt->execute();
-            return true;
-        } catch ( PDOException $e ) {
-            $_SESSION[ 'err' ] = $e->getMessage();
-            return false;
-        }
-        finally {
-            $stmt = null;
-        }
-    }
-
-
-    private function getUserData(string $mail): ?array {
-        $userData = null;
-        try {
-            $sql = 'SELECT usertoken, name, mail FROM tblusers WHERE mail = :mail';
-            $stmt = $this->conn->prepare($sql);
-            $stmt->bindParam(':mail', $mail);
-            $stmt->execute();
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($user) {
-                $userData = [
-                    'name' => $user['name'],
-                    'mail' => $user['mail'],
-                    'usertoken' => $user['usertoken'],
-                ];
-            }
-        } catch (PDOException $e) {
-            $_SESSION['err'] = $e->getMessage();
-        } finally {
-            $stmt = null;
-            $this->conn = null;
-        }
-        return $userData;
-    }
-    
-
-   
 
     public function outputData( $success = null, $message = null, $data = null )
  {

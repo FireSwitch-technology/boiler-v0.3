@@ -36,12 +36,13 @@ class Auth
       return false;
     }
 
-    $apptoken = $this->validateApiKey($api_key);
+    // $apptoken = $this->validateApiKey($api_key);
 
-    if ($apptoken === false) {
+    if ($api_key !== $_ENV['APP_TOKEN']) {
 
-      http_response_code(401);
-      $this->outputData(false, $_SESSION['err'], null);
+      http_response_code(401); #Unautorized status code
+      $this->outputData(false, "No app found", null);
+      exit;
       return false;
     }
 
@@ -65,8 +66,7 @@ class Auth
       $stmt->bindParam(':apptoken', $api_key);
       $stmt->execute();
   
-      if ($stmt->rowCount() == 0) {
-          $stmt = null;
+      if ($stmt->rowCount() === 0) {
           $_SESSION['err'] = "No app found.";
           $isvalidateApiKey = false;
       } else {
@@ -76,6 +76,7 @@ class Auth
               $isvalidateApiKey = false;
           }
       }
+      unset($this->conn); //Unset database conenction.
       return $isvalidateApiKey;
   }
   

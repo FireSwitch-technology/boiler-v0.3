@@ -20,7 +20,7 @@ global $mysqli;
 
 
 class Database{
-    private $pdo  = null;
+    private  $pdo  = null;
 
     /**
      * connect database
