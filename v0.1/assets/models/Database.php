@@ -13,12 +13,6 @@ if(session_id() == '') {
 ob_start();
 date_default_timezone_set("Africa/Lagos");
 
-$connect_error = "We sincerely apologise. We are experiencing connection problems";
-$mysqli=mysqli_connect( $_ENV['DB_HOST'],$_ENV['DB_USER'],$_ENV['DB_PWORD'],$_ENV['DB_NAME']);
-($mysqli)? TRUE : die($connect_error);
-global $mysqli;
-
-
 class Database{
     private  $pdo  = null;
 

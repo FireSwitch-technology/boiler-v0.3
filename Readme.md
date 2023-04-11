@@ -10,6 +10,7 @@ To use this boilerplate, follow these steps:
 * Import the included database dump file inside the db folder (boiler.sql), you  can rename it as you see fit. 
 * In the boiler plate there is an .env file, inside this file, register your constants inside  the .env. there are some predefined .env variables which are already defined.
 * Please note that this boilerplate uses PDO for database connectivity. Additionally, we advice that you unset any instantiated classes once they are no longer needed, in order to free up memory and improve performance
+* Please note that in this boiler plate,   a mail design has been created. you can modify it to suite your taste
 
 ---
 ## Authentication

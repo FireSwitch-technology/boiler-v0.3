@@ -58,7 +58,7 @@ class Users extends AbstractClasses
             $output = $this->outputData( true, 'Account created', null );
         } catch ( PDOException $e ) {
 
-            $output  = $this->respondWithInternalError( 'Error: ' . $e->getMessage(), null );
+            $output  = $this->respondWithInternalError( 'Error: ' . $e->getMessage());
         }
         finally {
             $this->conn = null;
@@ -66,10 +66,6 @@ class Users extends AbstractClasses
         }
 
         return $output;
-    }
-
-    public function updateUser() {
-
     }
 
     #  SaveProfileImage::This methids save users profile image::
@@ -136,10 +132,10 @@ class Users extends AbstractClasses
             $stmt->execute( $params );
 
             return $stmt->rowCount();
-        } catch ( Exception $e ) {
-            http_response_code( 500 );
-            $this->outputData( false, 'Unable to update user data. Please try again later.', null);
-            return 0;
+        } catch ( PDOException $e ) {
+            $_SESSION[ 'err' ] = $e->getMessage();
+            $this->respondWithInternalError($_SESSION[ 'err' ] );
+            return null;
         }
         finally {
             $stmt = null;
@@ -178,7 +174,7 @@ class Users extends AbstractClasses
 
         } catch ( PDOException $e ) {
             $_SESSION[ 'err' ] = $e->getMessage();
-            $this->respondWithInternalError( 'An error occurred while executing the query', $_SESSION[ 'err' ] );
+            $this->respondWithInternalError($_SESSION[ 'err' ] );
         }
         finally {
             $stmt = null;
@@ -200,7 +196,7 @@ class Users extends AbstractClasses
             }
         } catch ( PDOException $e ) {
             $_SESSION[ 'err' ] = $e->getMessage();
-            $this->respondWithInternalError( 'An error occurred while executing the query', $_SESSION[ 'err' ] );
+            $this->respondWithInternalError($_SESSION[ 'err' ] );
         }
         finally {
             $stmt = null;
@@ -215,7 +211,7 @@ class Users extends AbstractClasses
         try {
             $sql = 'SELECT pword FROM tblusers WHERE usertoken = :usertoken';
             $stmt = $this->conn->prepare( $sql );
-            $stmt->bindParam( ':usertoken', $data[ 'usertoken' ] );
+            $stmt->bindParam( ':usertoken', $data[ 'usertoken' ] , PDO::PARAM_INT);
 
             if ( $stmt->execute() ) {
                 $dbPwd = $stmt->fetchColumn();
@@ -232,13 +228,13 @@ class Users extends AbstractClasses
 
                 } else {
 
-                    $this->outputData( false, 'Current Password specified is not correct', null );
+                    $this->outputData( false, 'Current password specified is not correct', null );
                     return;
                 }
             }
         } catch ( PDOException $e ) {
             $_SESSION[ 'err' ] = $e->getMessage();
-            $this->respondWithInternalError( 'An error occurred while executing the query', $_SESSION[ 'err' ] );
+            $this->respondWithInternalError($_SESSION[ 'err' ] );
         }
         finally {
             $stmt = null;
@@ -255,8 +251,8 @@ class Users extends AbstractClasses
         try {
             $sql = 'UPDATE tblusers SET pword = :pword WHERE usertoken = :usertoken';
             $stmt = $this->conn->prepare( $sql );
-            $stmt->bindParam( ':pword', $pword );
-            $stmt->bindParam( ':usertoken', $usertoken );
+            $stmt->bindParam( ':pword', $pword ,  PDO::PARAM_STR );
+            $stmt->bindParam( ':usertoken', $usertoken ,  PDO::PARAM_INT );
             $stmt->execute();
             return true;
         } catch ( PDOException $e ) {
@@ -281,7 +277,7 @@ class Users extends AbstractClasses
         $passHash = password_hash( $token, PASSWORD_DEFAULT );
 
         if ( !$this->resetPasswordInDB( $passHash, $data[ 'mail' ] ) ) {
-            $this->respondWithInternalError( $_SESSION[ 'err' ], null );
+            $this->respondWithInternalError( $_SESSION[ 'err' ]);
 
             return false;
         }
@@ -309,8 +305,8 @@ class Users extends AbstractClasses
         try {
             $sql = 'UPDATE tblusers SET pword = :pword WHERE mail = :mail';
             $stmt = $this->conn->prepare( $sql );
-            $stmt->bindParam( ':pword', $pword );
-            $stmt->bindParam( ':mail', $mail );
+            $stmt->bindParam( ':pword', $pword ,  PDO::PARAM_STR );
+            $stmt->bindParam( ':mail', $mail ,  PDO::PARAM_STR );
             $stmt->execute();
             return true;
         } catch ( PDOException $e ) {
@@ -327,7 +323,7 @@ class Users extends AbstractClasses
         try {
             $sql = 'SELECT usertoken, name, mail FROM tblusers WHERE mail = :mail';
             $stmt = $this->conn->prepare( $sql );
-            $stmt->bindParam( ':mail', $mail );
+            $stmt->bindParam( ':mail', $mail,  PDO::PARAM_STR );
             $stmt->execute();
             $user = $stmt->fetch( PDO::FETCH_ASSOC );
             if ( $user ) {

@@ -14,13 +14,10 @@ class Auth extends AbstractClasses
     $this->conn = $database->connect();
   }
 
-  /**
-   * authenticate Api Key
-   *
-   * @param string $api_key
-   * @return boolean
-   */
-  public   function authenticateAPIKey($api_key)
+  
+   #authenticate Api Key
+  
+  public   function authenticateAPIKey(mixed $api_key):bool
   {
    
     if (!$api_key) {
@@ -51,18 +48,13 @@ class Auth extends AbstractClasses
   }
 
 
-  /**
-   * Validate Api Key
-   *
-   * @param string $api_key
-   * @return boolean
-   */
-  private function validateApiKey($api_key)
+   # validateApiKey:: This fucntion Validate Api Key
+  private function validateApiKey( mixed $api_key)
   {
     try {
       $sql = 'SELECT apptoken FROM apptoken WHERE apptoken = :apptoken';
       $stmt = $this->conn->prepare( $sql );
-      $stmt->bindParam( ':apptoken', $api_key );
+      $stmt->bindParam( ':apptoken', $api_key, PDO::PARAM_STR | PDO::PARAM_INT );
       $stmt->execute();
       if ( $stmt->rowCount() === 0 ) {
           return  false;
@@ -70,7 +62,7 @@ class Auth extends AbstractClasses
       return true;
   } catch ( PDOException $e ) {
       $_SESSION[ 'err' ] = $e->getMessage();
-      $this->respondWithInternalError( 'An error occurred while executing the query'.$_SESSION[ 'err' ], null );
+      $this->respondWithInternalError( $_SESSION[ 'err' ]);
   }
   finally {
       $stmt = null;
@@ -79,14 +71,5 @@ class Auth extends AbstractClasses
   }
   
 
-  public   function outputData($success = null, $message = null, $data = null)
-  {
-
-    $arr_output = array(
-      'success' => $success,
-      'message' => $message,
-      'data' => $data,
-    );
-    echo json_encode($arr_output);
-  }
+  
 }

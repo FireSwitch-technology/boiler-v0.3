@@ -57,10 +57,10 @@ abstract class AbstractClasses {
     }
 
     
-    public function respondWithInternalError(string  $message ,  $errors ): void
+    public function respondWithInternalError($errors ): void
     {
            http_response_code( 500 );
-           $this->outputData( false,  $message,  $errors );
+           $this->outputData( false,  "An error occurred while executing the query",  $errors );
        }
    
        public function token()

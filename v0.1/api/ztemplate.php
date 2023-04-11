@@ -41,6 +41,7 @@ foreach ( $validKeys as $key ) {
         # Sanitize input
     }
 }
+#Your method should be here
 unset( $user );
 unset( $db );
 

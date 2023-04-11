@@ -5,11 +5,11 @@ declare( strict_types = 1 );
 require_once( $_SERVER[ 'DOCUMENT_ROOT' ] . '/boiler/vendor/autoload.php' );
 // require_once __DIR__ . 'vendor/autoload.php';
 
-use Dotenv\Dotenv;
 
 header( 'Content-Type: application/json;charset=utf-8' );
 header( 'Access-Control-Allow-Methods: PUT, GET, POST' );
 
+use Dotenv\Dotenv;
 $dotenv = Dotenv::createImmutable( dirname( __DIR__, 2 ) );
 $dotenv->load();
 
