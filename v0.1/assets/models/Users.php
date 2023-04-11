@@ -1,9 +1,9 @@
 <?php
 
-class Users
+class Users extends AbstractClasses
  {
 
-    private $conn;
+    private   $conn;
 
     public function __construct( Database $database )
  {
@@ -13,16 +13,14 @@ class Users
 
     public function registerUser( array $data )
  {
-        $utility = new Utility();
 
         $phone = ( int ) $data[ 'phone' ];
 
         $checkIfMailExists = $this->checkIfMailExists( $data[ 'mail' ] );
         if ( $checkIfMailExists ) {
             $output = $this->outputData( false, 'Email already exists', null );
-            return;
         }
-        $token = ( int ) $utility->token();
+        $token = ( int ) $this->token();
         $passHash = password_hash( $data[ 'pword' ], PASSWORD_DEFAULT );
         #  Prepare the fields and values for the insert query
         $fields = [
@@ -50,9 +48,6 @@ class Users
             }
             $stmt->execute();
 
-            unset( $utility );
-            #In order to free up memories, remmeber to  terminate   classes after instanciation..
-
             $mailer = new Mailer();
 
             if ( $mailer->sendOTPToken( $data[ 'mail' ], $data[ 'name' ], '123' ) ) {
@@ -63,7 +58,7 @@ class Users
             $output = $this->outputData( true, 'Account created', null );
         } catch ( PDOException $e ) {
 
-            $output = $utility->outputData( false, 'Error: ' . $e->getMessage(), null );
+            $output  = $this->respondWithInternalError( 'Error: ' . $e->getMessage(), null );
         }
         finally {
             $this->conn = null;
@@ -77,14 +72,9 @@ class Users
 
     }
 
-    /**
-    * Save Profile Image
-    *
-    * @param [ type ] $propertyimage
-    * @return array
-    */
+    #  SaveProfileImage::This methids save users profile image::
 
-    public function saveProfileImage( $profileImage )
+    public function saveProfileImage( array $profileImage ):array
  {
         $imageInfo = array();
 
@@ -94,7 +84,7 @@ class Users
         # Check if at least profile  image file is present
         if ( ( !isset( $propimage ) || empty( $propimage ) ) ) {
             http_response_code( 400 );
-            $this->outputData( false, 'Image is required', null );
+            $this->outputData( false, 'Please select an image to upload', null );
             return null;
         }
 
@@ -106,7 +96,7 @@ class Users
             $propimage_ext = strtolower( pathinfo( $propimage, PATHINFO_EXTENSION ) );
             if ( !in_array( $propimage_ext, $valid_extensions ) ) {
                 http_response_code( 422 );
-                $this->outputData( false, 'File format not supported', null );
+                $this->outputData( false, 'Only JPG, JPEG, PNG and GIF files are allowed.', null );
                 return null;
             } else {
                 # Save the property image  file
@@ -114,7 +104,9 @@ class Users
                 $newProfileImageName = $_ENV[ 'APP_NAME' ] . '_' . $propnewFilename;
                 $profileImagePath = ( $_SERVER[ 'DOCUMENT_ROOT' ] . '/uploads/' . $newProfileImageName );
                 if ( !file_exists( $profileImageName ) || !is_readable( $profileImageTmp ) ) {
-                    $propimage = null;
+                    http_response_code( 422 );
+                    $this->outputData( false, 'Unable to upload the profile image. Please try again later.', null );
+                    return null;
                 } else if ( move_uploaded_file( $profileImageTmp, $profileImagePath ) ) {
                     $imageInfo[ 'profileImage' ] = $newProfileImageName;
                 } else {
@@ -126,93 +118,72 @@ class Users
         return $imageInfo;
     }
 
-    /**
-    * sanitizeInput Parameters
-    *
-    * @param [ type ] $input
-    * @return string
-    */
-    public  function sanitizeInput( $input )
- {
-        # Remove white space from beginning and end of string
-        $input = trim( $input );
-        # Remove slashes
-        $input = stripslashes( $input );
-        # Convert special characters to HTML entities
-        $input = htmlspecialchars( $input, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+    # updateUserData function updates user biodata
 
-        return $input;
-    }
+    public function updateUserData( int $id, array $data ): int {
 
-    /**
-    * resourceNotFound::Check for id if exists
-    *
-    * @param string $id
-    * @return void
-    */
-
-    private function resourceNotFound( string $id ): void
- {
-        http_response_code( 404 );
-        echo json_encode( [ 'message' => "Resource with id $id not found" ] );
-    }
-
-    /**
-    * Undocumented function
-    *
-    * @param int $id
-    * @param array $data
-    * @return integer
-    */
-
-    public function updateUserData( string $id, array $data ): int
- {
-        $fields = [];
-
-        if ( !empty( $data[ 'name' ] ) ) {
-            $fields[ 'name' ] = [ $data[ 'name' ], PDO::PARAM_STR ];
-        }
-
-        if ( array_key_exists( 'priority', $data ) ) {
-            $type = $data[ 'priority' ] === null ? PDO::PARAM_NULL : PDO::PARAM_INT;
-            $fields[ 'priority' ] = [ $data[ 'priority' ], $type ];
-        }
-
-        if ( array_key_exists( 'is_completed', $data ) ) {
-            $fields[ 'is_completed' ] = [ $data[ 'is_completed' ], PDO::PARAM_BOOL ];
-        }
-
-        if ( empty( $fields ) ) {
-            return 0;
-        } else {
-            $sql = 'UPDATE tblusers SET ';
-            $params = [];
-            foreach ( $fields as $name => $values ) {
-                $sql .= "$name = ?, ";
-                $params[] = $values[ 0 ];
+        try {
+            $updateQuery = 'UPDATE users SET ';
+            $params = array();
+            foreach ( $data as $key => $value ) {
+                $updateQuery .= $key . ' = ?, ';
+                $params[] = $value;
             }
-
-            $sql = rtrim( $sql, ', ' ) . ' WHERE id = ?';
+            $updateQuery = rtrim( $updateQuery, ', ' ) . ' WHERE id = ?';
             $params[] = $id;
 
-            $stmt = $this->conn->prepare( $sql );
+            $stmt = $this->conn->prepare( $updateQuery );
             $stmt->execute( $params );
 
             return $stmt->rowCount();
+        } catch ( Exception $e ) {
+            http_response_code( 500 );
+            $this->outputData( false, 'Unable to update user data. Please try again later.', null);
+            return 0;
+        }
+        finally {
+            $stmt = null;
+            $this->conn = null;
         }
     }
 
-    /**
-    * respondUnprocessableEntity alert of errors deteced
-    *
-    * @param array $errors
-    * @return void
-    */
+    public function tryLogin( $data ):array|bool {
 
-    public function respondUnprocessableEntity( array $errors ): void
- {
-        http_response_code( 422 );
-        $this->outputData( false,  'Unable to process requests',  $errors );
+        try {
+            $sql = 'SELECT * FROM tblusers WHERE mail = :mail';
+            $stmt = $this->conn->prepare( $sql );
+            $stmt->bindParam( ':mail', $data[ 'mail' ], PDO::PARAM_STR );
+            $stmt->execute();
+            if ( $stmt->rowCount() === 0 ) {
+                $this->outputData( false, 'No user found', null );
+                return false;
+            }
+
+            $user = $stmt->fetch( PDO::FETCH_ASSOC );
+
+            if ( !password_verify( $data[ 'pword' ], $user[ 'pword' ] ) ) {
+                $this->outputData( false, "Incorrect password for $data[mail]", null );
+                return false;
+            }
+
+            if ( $user ) {
+                $userData = [
+                    'name' => $user[ 'name' ],
+                    'mail' => $user[ 'mail' ],
+                    'usertoken' => $user[ 'usertoken' ],
+                ];
+            }
+            $this->outputData( true, 'Login successful',  $userData );
+            return true;
+
+        } catch ( PDOException $e ) {
+            $_SESSION[ 'err' ] = $e->getMessage();
+            $this->respondWithInternalError( 'An error occurred while executing the query', $_SESSION[ 'err' ] );
+        }
+        finally {
+            $stmt = null;
+            $this->conn = null;
+        }
     }
 
     private function checkIfMailExists( string $mail ): bool {
@@ -229,7 +200,7 @@ class Users
             }
         } catch ( PDOException $e ) {
             $_SESSION[ 'err' ] = $e->getMessage();
-            $this->outputData( false, 'An error occurred while executing the query'.$_SESSION[ 'err' ], null );
+            $this->respondWithInternalError( 'An error occurred while executing the query', $_SESSION[ 'err' ] );
         }
         finally {
             $stmt = null;
@@ -238,7 +209,7 @@ class Users
 
     #Update Password:: This function updates a user Password
 
-    public function updatePassword( $data ): void
+    public function updatePassword( array $data ): void
  {
 
         try {
@@ -260,13 +231,14 @@ class Users
                     return;
 
                 } else {
+
                     $this->outputData( false, 'Current Password specified is not correct', null );
                     return;
                 }
             }
         } catch ( PDOException $e ) {
             $_SESSION[ 'err' ] = $e->getMessage();
-            $this->outputData( false, 'An error occurred while executing the query'.$_SESSION[ 'err' ], null );
+            $this->respondWithInternalError( 'An error occurred while executing the query', $_SESSION[ 'err' ] );
         }
         finally {
             $stmt = null;
@@ -305,20 +277,20 @@ class Users
             return false;
 
         }
-        $utility = new Utility();
-        $token = $utility->token();
+        $token = $this->token();
         $passHash = password_hash( $token, PASSWORD_DEFAULT );
 
         if ( !$this->resetPasswordInDB( $passHash, $data[ 'mail' ] ) ) {
-            $this->outputData( false, $_SESSION[ 'err' ], null );
+            $this->respondWithInternalError( $_SESSION[ 'err' ], null );
+
             return false;
         }
 
         $mailer = new Mailer;
-        $userData = $this->getUserData($data['mail']);
+        $userData = $this->getUserData( $data[ 'mail' ] );
 
         try {
-            if ( $mailer->sendPasswordToUser( $data[ 'mail' ], $userData['name'], $token ) ) {
+            if ( $mailer->sendPasswordToUser( $data[ 'mail' ], $userData[ 'name' ], $token ) ) {
                 $this->outputData( true, 'Password sent to mail', null );
                 return true;
 
@@ -328,7 +300,6 @@ class Users
         }
         finally {
             unset( $mailer );
-            unset( $utility );
         }
 
     }
@@ -351,42 +322,29 @@ class Users
         }
     }
 
-
-    private function getUserData(string $mail): ?array {
+    private function getUserData( string $mail ): ?array {
         $userData = null;
         try {
             $sql = 'SELECT usertoken, name, mail FROM tblusers WHERE mail = :mail';
-            $stmt = $this->conn->prepare($sql);
-            $stmt->bindParam(':mail', $mail);
+            $stmt = $this->conn->prepare( $sql );
+            $stmt->bindParam( ':mail', $mail );
             $stmt->execute();
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($user) {
+            $user = $stmt->fetch( PDO::FETCH_ASSOC );
+            if ( $user ) {
                 $userData = [
-                    'name' => $user['name'],
-                    'mail' => $user['mail'],
-                    'usertoken' => $user['usertoken'],
+                    'name' => $user[ 'name' ],
+                    'mail' => $user[ 'mail' ],
+                    'usertoken' => $user[ 'usertoken' ],
                 ];
             }
-        } catch (PDOException $e) {
-            $_SESSION['err'] = $e->getMessage();
-        } finally {
+        } catch ( PDOException $e ) {
+            $_SESSION[ 'err' ] = $e->getMessage();
+        }
+        finally {
             $stmt = null;
             $this->conn = null;
         }
         return $userData;
     }
-    
 
-   
-
-    public function outputData( $success = null, $message = null, $data = null )
- {
-
-        $arr_output = array(
-            'success' => $success,
-            'message' => $message,
-            'data' => $data,
-        );
-        echo json_encode( $arr_output );
-    }
 }

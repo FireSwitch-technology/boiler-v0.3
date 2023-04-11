@@ -2,7 +2,7 @@
 
 
 
-class Auth
+class Auth extends AbstractClasses
 {
 
 
@@ -59,25 +59,23 @@ class Auth
    */
   private function validateApiKey($api_key)
   {
-      $isvalidateApiKey = false;
-  
-      $sql = "SELECT apptoken FROM apptoken WHERE apptoken = :apptoken";
-      $stmt = $this->conn->prepare($sql);
-      $stmt->bindParam(':apptoken', $api_key);
+    try {
+      $sql = 'SELECT apptoken FROM apptoken WHERE apptoken = :apptoken';
+      $stmt = $this->conn->prepare( $sql );
+      $stmt->bindParam( ':apptoken', $api_key );
       $stmt->execute();
-  
-      if ($stmt->rowCount() === 0) {
-          $_SESSION['err'] = "No app found.";
-          $isvalidateApiKey = false;
-      } else {
-          if ($biz = $stmt->fetchAll(PDO::FETCH_ASSOC)) {
-              $isvalidateApiKey = true;
-          } else {
-              $isvalidateApiKey = false;
-          }
+      if ( $stmt->rowCount() === 0 ) {
+          return  false;
       }
-      unset($this->conn); //Unset database conenction.
-      return $isvalidateApiKey;
+      return true;
+  } catch ( PDOException $e ) {
+      $_SESSION[ 'err' ] = $e->getMessage();
+      $this->respondWithInternalError( 'An error occurred while executing the query'.$_SESSION[ 'err' ], null );
+  }
+  finally {
+      $stmt = null;
+      $this->conn = null;
+  }
   }
   
 

@@ -4,6 +4,12 @@ $data = ( array ) json_decode( file_get_contents( 'php://input' ), true );
 
 $user = new Users( $db );
 
+if ( $_SERVER[ 'REQUEST_METHOD' ] !== 'POST' ) {
+    header( 'HTTP/1.1 405 Method Not Allowed' );
+    header( 'Allow: POST' );
+    exit();
+}
+
 #  Check for params  if matches required parametes
 $validKeys = [ 'name', 'mail', 'phone', 'address', 'pword' ];
 $invalidKeys = array_diff( array_keys( $data ), $validKeys );
@@ -20,7 +26,7 @@ if ( !empty( $invalidKeys ) ) {
 
 }
 
-#  Check for fields  are empty
+#  Check for fields  if empty
 foreach ( $validKeys as $key ) {
     if ( empty( $data[ $key ] ) ) {
         $errors[] = ucfirst( $key ) . ' is required';
@@ -29,10 +35,12 @@ foreach ( $validKeys as $key ) {
 
         $user->respondUnprocessableEntity( $errors );
         return;
-    }else{
-        $data[$key] = $user->sanitizeInput($data[$key]); # Sanitize input
+    } else {
+        $data[ $key ] = $user->sanitizeInput( $data[ $key ] );
+        # Sanitize input
     }
 }
-$registerUser = $user->registerUser( $data );
-unset($user);
+$registerUser = $user->registerUser( $data[$key] );
+unset( $user );
+unset( $db );
 

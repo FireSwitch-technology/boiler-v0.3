@@ -8,6 +8,12 @@ $user = new Users( $db );
 $validKeys = ['mail'];
 $errors = [];
 
+if ( $_SERVER[ 'REQUEST_METHOD' ] !== 'POST' ) {
+    header( 'HTTP/1.1 405 Method Not Allowed' );
+    header( 'Allow: POST' );
+    exit();
+}
+
 #   Check if only valid input fields are provided
 $invalidKeys = array_diff( array_keys( $data ), $validKeys );
 if ( !empty( $invalidKeys ) ) {
@@ -35,4 +41,5 @@ if ( !empty( $errors ) ) {
 }
 $forgetPword = $user->forgetPword( $data );
 unset($user);
+unset($db);
 
