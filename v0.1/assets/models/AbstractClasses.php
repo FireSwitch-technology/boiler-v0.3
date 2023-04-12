@@ -53,14 +53,14 @@ abstract class AbstractClasses {
     public function respondUnprocessableEntity( array $errors ): void
  {
         http_response_code( 400 );
-        $this->outputData( false,  'Unable to process request',  $errors );
+        $this->outputData( false,  'Unable to process request, try again later',  $errors );
     }
 
     
     public function respondWithInternalError($errors ): void
     {
            http_response_code( 500 );
-           $this->outputData( false,  "An error occurred while executing the query",  $errors );
+           $this->outputData( false,  "Unable to process request, try again later",  $errors );
        }
    
        public function token()
