@@ -37,7 +37,7 @@ abstract class AbstractClasses {
 
     #  resourceNotFound::Check for id if exists
 
-    private function resourceNotFound( string $id ): void
+    private function resourceNotFound( int $id ): void
  {
         http_response_code( 404 );
         echo json_encode( [ 'message' => "Resource with id $id not found" ] );
