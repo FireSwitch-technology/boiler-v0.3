@@ -19,6 +19,11 @@ To use this boilerplate, follow these steps:
  
 * To include the Authorization header, make sure to add it to the header section of your API request. Here is an example using cURL
 
+
+---
+## Configuration Update
+
+* The boilerplate has been reconfigured, so you no longer need to include the .php extension when testing  endpoint on any  tools such as Postman and co
 ---
 ## Functionality
 

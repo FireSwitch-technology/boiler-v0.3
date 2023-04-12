@@ -40,7 +40,7 @@ foreach ( $validKeys as $key ) {
         # Sanitize input
     }
 }
-$registerUser = $user->registerUser( $data[$key] );
+$registerUser = $user->registerUser( $data );
 unset( $user );
 unset( $db );
 

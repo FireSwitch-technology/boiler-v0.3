@@ -30,6 +30,7 @@ class Users extends AbstractClasses
             'address' => $data[ 'address' ],
             'pword'  => $passHash,
             'usertoken' => $token
+            
         ];
 
         # Build the SQL query

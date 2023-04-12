@@ -23,7 +23,6 @@ if ( !empty( $invalidKeys ) ) {
         $user->respondUnprocessableEntity( $errors );
         return;
     }
-
 }
 
 #  Check for fields  are empty

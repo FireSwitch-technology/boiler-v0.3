@@ -48,15 +48,18 @@ class Mailer
                             font-size: 14px;
                             margin-bottom: 15px;
                         }
+                        .flop{
+                            padding: 20px 10px;
+                        }
                     }
                 </style>
             </head>
             <body style='font-family: Arial,sans-serif; font-size: 14px;padding:30px; line-height: 1.6; color: #333; box-shadow: 0px 0px 10px #ccc;'>
-                <div style=padding: 20px;>
+                <div style=padding: 20px; class=flop>
                
                     <p style='font-size: 14px; margin-bottom: 20px;'>Dear $fname,</p>
                     <p style='font-size: 14px; margin-bottom: 20px;'>Thank you for creating an account with our platform. To ensure the security of your account, we require that you verify your email address by entering the OTP code below:</p>
-                    <p style='font-size: 16px; margin-bottom: 20px;'>$otp</p>
+                    <p style='font-size: 16px; margin-bottom: 20px;'><b>$otp</b></p>
                     <p style='font-size: 14px; margin-bottom: 20px;'>Please enter the OTP code in the provided field on the account verification page. If you did not initiate this request, please ignore this email.</p>
                     <p style='font-size: 14px; margin-bottom: 20px;'>Thank you for your cooperation.</p>
                     <p style='font-size: 14px; margin-bottom: 20px;'>Best regards,</p>
