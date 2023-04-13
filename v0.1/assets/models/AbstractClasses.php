@@ -50,10 +50,32 @@ abstract class AbstractClasses {
     * @return void
     */
 
-    public function respondUnprocessableEntity( array $errors ): void
- {
-        http_response_code( 400 );
-        $this->outputData( false,  'Unable to process request, try again later',  $errors );
+    public function respondUnprocessableEntity(array $errors): void
+    {
+        http_response_code(400);
+        $this->outputData(false,  'Kindly review your request parameters to ensure they comply with our requirements.',  $errors);
+    }
+
+    public function connectToThirdPartyAPI( array $payload, string $url)
+    {
+       
+    
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+    
+        $response = curl_exec($ch);
+        
+        if ($response === false) {
+            $error = curl_error($ch);
+            $this->outputData(false, 'Unable to process request, try again later', null);
+        }
+    
+        curl_close($ch);
+    
+        return $response;
     }
 
     
