@@ -1,40 +1,27 @@
 <?php
-
-declare( strict_types = 1 );
-
-require_once( $_SERVER[ 'DOCUMENT_ROOT' ] . '/boiler/vendor/autoload.php' );
-// require_once __DIR__ . 'vendor/autoload.php';
-
-
+header( 'Access-Control-Allow-Origin: *' );
+header( 'Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS' );
+header( 'Access-Control-Allow-Headers: Content-Type, Authorization, Content-Length, X-Requested-With' );
 header( 'Content-Type: application/json;charset=utf-8' );
-header( 'Access-Control-Allow-Methods: PUT, GET, POST' );
 
-use Dotenv\Dotenv;
-$dotenv = Dotenv::createImmutable( dirname( __DIR__, 2 ) );
-$dotenv->load();
-
+require_once($_SERVER[ 'DOCUMENT_ROOT' ] . '/boiler/vendor/autoload.php' );
 set_error_handler( 'ErrorHandler::handleError' );
 set_exception_handler( 'ErrorHandler::handleException' );
 
+use Dotenv\Dotenv;
+$dotenv = Dotenv::createImmutable( dirname( __DIR__, 2) );
+$dotenv->load();
+
 $headers = apache_request_headers();
 $authHeader = $headers[ 'Authorization' ] ?? null;
-
-if ( !$authHeader ) {
-    http_response_code( 401 );
-    exit( json_encode( [ 'success' => false, 'message' => 'Authorization header is missing' ] ) );
-}
-
-// Split the header into its parts
-$parts = explode( ' ', $authHeader );
-
-// Extract the token portion
-$token = $parts[ 1 ] ?? null;
+$token = (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) ? $matches[1] : null;
 
 $db = new Database();
-$auth = new Auth( $db );
+$auth = new Auth($db);
 
-if ( !$auth->authenticateAPIKey( $token ) ) {
-    http_response_code( 401 );
+if (!$auth->authenticateAPIKey($token)) {
+exit;
 }
-unset($auth);
+unset( $auth );
 // The API key is valid, continue with your logic here
+
