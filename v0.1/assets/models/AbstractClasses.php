@@ -91,6 +91,13 @@ abstract class AbstractClasses {
          $defaultPassword = mt_rand(100000, 999999);
          return $defaultPassword;
        }
+
+       public function formatDate($time){
+
+        return date("D d M, Y: H", $time);
+
+
+    }
     
     public function outputData( $success = null, $message = null, $data = null )
  {
