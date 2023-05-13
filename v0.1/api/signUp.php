@@ -12,33 +12,8 @@ if ( $_SERVER[ 'REQUEST_METHOD' ] !== 'POST' ) {
 
 #  Check for params  if matches required parametes
 $validKeys = [ 'name', 'mail', 'phone', 'address', 'pword' ];
-$invalidKeys = array_diff( array_keys( $data ), $validKeys );
-if ( !empty( $invalidKeys ) ) {
-    foreach ( $invalidKeys as $key ) {
-        $errors[] = "$key is not a valid input field";
-    }
-
-    if ( !empty( $errors ) ) {
-
-        $user->respondUnprocessableEntity( $errors );
-        return;
-    }
-
-}
-
-#  Check for fields  if empty
-foreach ( $validKeys as $key ) {
-    if ( empty( $data[ $key ] ) ) {
-        $errors[] = ucfirst( $key ) . ' is required';
-    }
-    if ( !empty( $errors ) ) {
-
-        $user->respondUnprocessableEntity( $errors );
-        return;
-    } else {
-        $data[ $key ] = $user->sanitizeInput( $data[ $key ] );
-        # Sanitize input
-    }
+if (!$user->validateRequiredParams($data, $validKeys)) {
+    return;
 }
 $registerUser = $user->registerUser( $data );
 unset( $user );

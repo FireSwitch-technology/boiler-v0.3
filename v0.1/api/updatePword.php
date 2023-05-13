@@ -4,18 +4,13 @@ $data = ( array ) json_decode( file_get_contents( 'php://input' ), true );
 
 $user = new Users( $db );
 
-if ( $_SERVER[ 'REQUEST_METHOD' ] !== 'POST' ) {
-    header( 'HTTP/1.1 405 Method Not Allowed' );
-    header( 'Allow: POST' );
-    exit();
-}
-
+$validKeys = [ 'usertoken', 'fpword', 'npword' ];
 #  Check for params  if matches required parametes
-$validKeys = [ 'mail', 'pword' ];
 if (!$user->validateRequiredParams($data, $validKeys)) {
     return;
 }
-$registerUser = $user->tryLogin( $data );
-unset( $user );
-unset( $db );
+    
+$updatePassword = $user->updatePassword( $data );
+unset($user);
+unset($db);
 

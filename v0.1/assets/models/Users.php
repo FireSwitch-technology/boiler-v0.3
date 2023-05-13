@@ -1,6 +1,6 @@
 <?php
 
-class Users extends AbstractClasses
+class Users extends SharedModel
  {
 
     private   $conn;
@@ -18,7 +18,8 @@ class Users extends AbstractClasses
 
         $checkIfMailExists = $this->checkIfMailExists( $data[ 'mail' ] );
         if ( $checkIfMailExists ) {
-            $output = $this->outputData( false, 'Email already exists', null );
+            $this->outputData( false, 'Email already exists', null );
+            return;
         }
         $token = ( int ) $this->token();
         $passHash = password_hash( $data[ 'pword' ], PASSWORD_DEFAULT );
@@ -69,52 +70,7 @@ class Users extends AbstractClasses
         return $output;
     }
 
-    #  SaveProfileImage::This methids save users profile image::
-
-    public function saveProfileImage( array $profileImage ):array
- {
-        $imageInfo = array();
-
-        # Get the image file information
-        $profileImageName = $profileImage[ 'name' ];
-        $profileImageTmp = $profileImage[ 'tmp_name' ];
-        # Check if at least profile  image file is present
-        if ( ( !isset( $propimage ) || empty( $propimage ) ) ) {
-            http_response_code( 400 );
-            $this->outputData( false, 'Please select an image to upload', null );
-            return null;
-        }
-
-        # Valid file extensions
-        $valid_extensions = array( 'jpg', 'jpeg', 'png', 'gif' );
-
-        # Test for profile image file extension
-        if ( isset( $propimage ) && !empty( $propimage ) ) {
-            $propimage_ext = strtolower( pathinfo( $propimage, PATHINFO_EXTENSION ) );
-            if ( !in_array( $propimage_ext, $valid_extensions ) ) {
-                http_response_code( 422 );
-                $this->outputData( false, 'Only JPG, JPEG, PNG and GIF files are allowed.', null );
-                return null;
-            } else {
-                # Save the property image  file
-                $propnewFilename = time() . '_' . $propimage;
-                $newProfileImageName = $_ENV[ 'APP_NAME' ] . '_' . $propnewFilename;
-                $profileImagePath = ( $_SERVER[ 'DOCUMENT_ROOT' ] . '/uploads/' . $newProfileImageName );
-                if ( !file_exists( $profileImageName ) || !is_readable( $profileImageTmp ) ) {
-                    http_response_code( 422 );
-                    $this->outputData( false, 'Unable to upload the profile image. Please try again later.', null );
-                    return null;
-                } else if ( move_uploaded_file( $profileImageTmp, $profileImagePath ) ) {
-                    $imageInfo[ 'profileImage' ] = $newProfileImageName;
-                } else {
-                    $propimage = null;
-                }
-            }
-        }
-        http_response_code( 200 );
-        return $imageInfo;
-    }
-
+    
     # updateUserData function updates user biodata
 
     public function updateUserData( int $id, array $data ): int {
@@ -287,7 +243,7 @@ class Users extends AbstractClasses
         $userData = $this->getUserData( $data[ 'mail' ] );
 
         try {
-            if ( $mailer->sendPasswordToUser( $data[ 'mail' ], $userData[ 'name' ], $token ) ) {
+            if ( $mailer->sendPasswordToUser( $data[ 'mail' ], $userData[ 'fname' ], $token ) ) {
                 $this->outputData( true, 'Password sent to mail', null );
                 return true;
 
@@ -319,29 +275,6 @@ class Users extends AbstractClasses
         }
     }
 
-    private function getUserData( string $mail ): ?array {
-        $userData = null;
-        try {
-            $sql = 'SELECT usertoken, name, mail FROM tblusers WHERE mail = :mail';
-            $stmt = $this->conn->prepare( $sql );
-            $stmt->bindParam( ':mail', $mail,  PDO::PARAM_STR );
-            $stmt->execute();
-            $user = $stmt->fetch( PDO::FETCH_ASSOC );
-            if ( $user ) {
-                $userData = [
-                    'name' => $user[ 'name' ],
-                    'mail' => $user[ 'mail' ],
-                    'usertoken' => $user[ 'usertoken' ],
-                ];
-            }
-        } catch ( PDOException $e ) {
-            $_SESSION[ 'err' ] = $e->getMessage();
-        }
-        finally {
-            $stmt = null;
-            $this->conn = null;
-        }
-        return $userData;
-    }
+    
 
 }

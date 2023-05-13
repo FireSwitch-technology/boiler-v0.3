@@ -2,7 +2,7 @@
 
 
 
-class Auth extends AbstractClasses
+class Auth extends SharedModel
 {
 
 
@@ -14,62 +14,26 @@ class Auth extends AbstractClasses
     $this->conn = $database->connect();
   }
 
-  
-   #authenticate Api Key
-  
-  public   function authenticateAPIKey(mixed $api_key):bool
+
+  #authenticate Api Key
+
+  public   function authenticateAPIKey($api_key): bool
   {
-   
-    if (!$api_key) {
-      http_response_code(401);
-      $this->outputData(false, 'Invalid Authorization header format', null);
-      return false;
-  }
+
 
     if (empty($api_key)) {
-
-      http_response_code(400);
-      $this->outputData(false, 'missing API key', null);
+      $_SESSION['err'] = "missing API key";
       return false;
     }
 
-    // $apptoken = $this->validateApiKey($api_key);
 
     if ($api_key !== $_ENV['APP_TOKEN']) {
 
-      http_response_code(401); #Unautorized status code
-      $this->outputData(false, "No app found", null);
-      exit;
+      $_SESSION['err'] = "No app found";
       return false;
     }
 
 
     return true;
   }
-
-
-   # validateApiKey:: This fucntion Validate Api Key
-  private function validateApiKey( mixed $api_key)
-  {
-    try {
-      $sql = 'SELECT apptoken FROM apptoken WHERE apptoken = :apptoken';
-      $stmt = $this->conn->prepare( $sql );
-      $stmt->bindParam( ':apptoken', $api_key, PDO::PARAM_STR | PDO::PARAM_INT );
-      $stmt->execute();
-      if ( $stmt->rowCount() === 0 ) {
-          return  false;
-      }
-      return true;
-  } catch ( PDOException $e ) {
-      $_SESSION[ 'err' ] = $e->getMessage();
-      $this->respondWithInternalError( $_SESSION[ 'err' ]);
-  }
-  finally {
-      $stmt = null;
-      $this->conn = null;
-  }
-  }
-  
-
-  
 }
