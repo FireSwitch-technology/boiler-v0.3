@@ -99,6 +99,38 @@ abstract class AbstractClasses {
 
     }
     
+
+    public  validateInput($data, $validKeys) {
+        $errors = [];
+    
+        // Check for invalid keys
+        $invalidKeys = array_diff(array_keys($data), $validKeys);
+        if (!empty($invalidKeys)) {
+            foreach ($invalidKeys as $key) {
+                $errors[] = "$key is not a valid input field";
+            }
+        }
+    
+        // Check for empty fields
+        foreach ($validKeys as $key) {
+            if (empty($data[$key])) {
+                $errors[] = ucfirst($key) . ' is required';
+            }
+        }
+    
+        if (!empty($errors)) {
+            $this->respondUnprocessableEntity($errors);
+            return;
+        }
+    
+        // Sanitize input
+        foreach ($validKeys as $key) {
+            $data[$key] = $this->sanitizeInput($data[$key]);
+        }
+    
+        return $data;
+    }
+    
     public function outputData( $success = null, $message = null, $data = null )
  {
 
