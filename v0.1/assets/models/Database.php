@@ -5,11 +5,6 @@ ini_set("allow_url_fopen", true);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 0);
 
-
-if(session_id() == '') {
- session_start();
- } else {}
-
 ob_start();
 date_default_timezone_set("Africa/Lagos");
 

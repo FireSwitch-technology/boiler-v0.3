@@ -1,19 +1,7 @@
 <?php
 
-
-
 class Auth extends SharedModel
 {
-
-
-  private   $conn;
-
-
-  public function __construct(Database $database)
-  {
-    $this->conn = $database->connect();
-  }
-
 
   #authenticate Api Key
 

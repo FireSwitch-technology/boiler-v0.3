@@ -3,13 +3,6 @@
 class Users extends SharedModel
  {
 
-    private   $conn;
-
-    public function __construct( Database $database )
- {
-
-        $this->conn = $database->connect();
-    }
 
     public function registerUser( array $data )
  {

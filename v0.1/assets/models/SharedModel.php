@@ -3,6 +3,14 @@
 abstract class SharedModel
 {
 
+    public   $conn;
+
+
+    public function __construct(Database $database)
+    {
+      $this->conn = $database->connect();
+    }
+  
 
     public function validateRequiredParams($data, $validKeys)
     {
@@ -197,7 +205,7 @@ abstract class SharedModel
                 throw new \InvalidArgumentException('Invalid identifier type');
             }
 
-            $stmt = $db->connect()->prepare($sql);
+            $stmt = $this->conn->prepare($sql);
             if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
                 $stmt->bindParam(':mail', $identifier);
             } else {
@@ -224,7 +232,6 @@ abstract class SharedModel
             return false;
         } finally {
             $stmt = null;
-            unset($db);
         }
         return $array;
     }
@@ -235,9 +242,9 @@ abstract class SharedModel
     {
 
         try {
-            $db = new Database();
+            
             $sql = 'SELECT usertoken FROM tblusers WHERE usertoken = :usertoken';
-            $stmt = $db->connect()->prepare($sql);
+            $stmt = $this->conn->prepare($sql);
             $stmt->bindParam(':usertoken', $usertoken);
             $stmt->execute();
 
@@ -254,7 +261,7 @@ abstract class SharedModel
             return false;
         } finally {
             $stmt =  null;
-            unset($db);
+            
         }
     }
 
