@@ -3,75 +3,57 @@
 use PHPMailer\PHPMailer\PHPMailer;
 
 class Mailer
- {
+{
 
-    public function sendOTPToken( $email, $fname, $otp )
- {
+    public function sendOTPToken($email, $fname, $otp)
+    {
 
-        require_once( $_SERVER[ 'DOCUMENT_ROOT' ] . '/boiler/vendor/autoload.php' );
+        require_once($_SERVER['DOCUMENT_ROOT'] . '/boiler/vendor/autoload.php');
 
-        $mail = new PHPMailer( true );
+        $mail = new PHPMailer(true);
 
         $mail->isSMTP();
 
         // $mail->SMTPDebug = 2;
-        $mail->Host = $_ENV[ 'HOST_NAME' ];
+        $mail->Host = $_ENV['HOST_NAME'];
 
         $mail->SMTPAuth = true;
 
-        $mail->Username = $_ENV[ 'SMTP_USERNAME' ];
+        $mail->Username = $_ENV['SMTP_USERNAME'];
 
-        $mail->Password = $_ENV[ 'SMTP_PWORD' ];
+        $mail->Password = $_ENV['SMTP_PWORD'];
 
         $mail->SMTPSecure = 'ssl';
 
         $mail->Port = 465;
 
-        $mail->setFrom( $_ENV[ 'APP_MAIL' ], $_ENV[ 'APP_NAME' ] );
+        $mail->setFrom($_ENV['APP_MAIL'], $_ENV['APP_NAME']);
 
-        $mail->addAddress( $email, $fname );
+        $mail->addAddress($email, $fname);
 
-        $mail->isHTML( true );
+        $mail->isHTML(true);
 
         $mail->Subject =  " " . $_ENV['APP_NAME'] . "  Account Verification";
 
-        $body = "
-        <html>
-            <head>
-                <style>
-                    @media only screen and (max-width: 768px) {
-                        h1 {
-                            font-size: 15px;
-                            margin-bottom: 20px;
-                        }
-                        p {
-                            font-size: 14px;
-                            margin-bottom: 15px;
-                        }
-                        .flop{
-                            padding: 20px 10px;
-                        }
-                    }
-                </style>
-            </head>
-            <body style='font-family: Arial,sans-serif; font-size: 14px;padding:30px; line-height: 1.6; color: #333; box-shadow: 0px 0px 10px #ccc;'>
-                <div style=padding: 20px; class=flop>
-               
-                    <p style='font-size: 14px; margin-bottom: 20px;'>Dear $fname,</p>
-                    <p style='font-size: 14px; margin-bottom: 20px;'>Thank you for creating an account with our platform. To ensure the security of your account, we require that you verify your email address by entering the OTP code below:</p>
-                    <p style='font-size: 16px; margin-bottom: 20px;'><b>$otp</b></p>
-                    <p style='font-size: 14px; margin-bottom: 20px;'>Please enter the OTP code in the provided field on the account verification page. If you did not initiate this request, please ignore this email.</p>
-                    <p style='font-size: 14px; margin-bottom: 20px;'>Thank you for your cooperation.</p>
-                    <p style='font-size: 14px; margin-bottom: 20px;'>Best regards,</p>
-                    <p style='font-size: 14px; margin-bottom: 20px;'>Team  " . $_ENV['APP_NAME'] . "</p>
-                </div>
-            </body>
-        </html>
-    ";
+        $body =  "Dear $fname ,<br><br>";
+
+        $body .= "Thank you for registering with us! We're thrilled to have you as a part of our community. To ensure the security and validity of your account, we kindly ask you to complete the email verification process. <br><br>";
+
+        $body .=  "Your OTP is: $otp<br><br>";
+
+        $body .=  "To finalize your registration and gain full access to our platform, kindly enter the OTP in the designated field on our website. This verification step helps us ensure that your email address is correct and that you have control over the account.<br><br>";
+
+        $body .= "<h4> $otp</h4><br><br>";
+
+        $body .= "Thank you for your cooperation in completing the email verification process. We look forward to providing you with a fantastic experience on our platform. Should you need any assistance or have any feedback, feel free to reach out to us<br><br>";
+
+        $body .= 'Best regards, <br><br>';
+
+        $body .= "Team  {$_ENV['APP_NAME']}";
 
         $mail->Body = $body;
 
-        if ( !$mail->send() ) {
+        if (!$mail->send()) {
             echo 'sent';
         } else {
             return true;
@@ -81,37 +63,37 @@ class Mailer
 
 
 
-    public function sendPasswordToUser( $email, $fname, $token )
+    public function sendPasswordToUser($email, $fname, $token)
     {
-   
-           require_once( $_SERVER[ 'DOCUMENT_ROOT' ] . '/boiler/vendor/autoload.php' );
-   
-           $mail = new PHPMailer( true );
-   
-           $mail->isSMTP();
-   
-           // $mail->SMTPDebug = 2;
-           $mail->Host = $_ENV[ 'HOST_NAME' ];
-   
-           $mail->SMTPAuth = true;
-   
-           $mail->Username = $_ENV[ 'SMTP_USERNAME' ];
-   
-           $mail->Password = $_ENV[ 'SMTP_PWORD' ];
-   
-           $mail->SMTPSecure = 'ssl';
-   
-           $mail->Port = 465;
-   
-           $mail->setFrom( $_ENV[ 'APP_MAIL' ], $_ENV[ 'APP_NAME' ] );
-   
-           $mail->addAddress( $email, $fname );
-   
-           $mail->isHTML( true );
-   
-           $mail->Subject =  " " . $_ENV['APP_NAME'] . "  Reset Your Password";
-   
-           $body = "
+
+        require_once($_SERVER['DOCUMENT_ROOT'] . '/boiler/vendor/autoload.php');
+
+        $mail = new PHPMailer(true);
+
+        $mail->isSMTP();
+
+        // $mail->SMTPDebug = 2;
+        $mail->Host = $_ENV['HOST_NAME'];
+
+        $mail->SMTPAuth = true;
+
+        $mail->Username = $_ENV['SMTP_USERNAME'];
+
+        $mail->Password = $_ENV['SMTP_PWORD'];
+
+        $mail->SMTPSecure = 'ssl';
+
+        $mail->Port = 465;
+
+        $mail->setFrom($_ENV['APP_MAIL'], $_ENV['APP_NAME']);
+
+        $mail->addAddress($email, $fname);
+
+        $mail->isHTML(true);
+
+        $mail->Subject =  " " . $_ENV['APP_NAME'] . "  Reset Your Password";
+
+        $body = "
            <html>
                <head>
                    <style>
@@ -149,14 +131,14 @@ class Mailer
                </body>
            </html>
         ";
-        
-   
-           $mail->Body = $body;
-   
-           if ( !$mail->send() ) {
-               echo 'sent';
-           } else {
-               return true;
-           }
-       }
+
+
+        $mail->Body = $body;
+
+        if (!$mail->send()) {
+            echo 'sent';
+        } else {
+            return true;
+        }
+    }
 }
