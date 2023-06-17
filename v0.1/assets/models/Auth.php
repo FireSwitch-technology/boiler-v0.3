@@ -4,10 +4,8 @@ class Auth extends SharedModel
 {
 
   #authenticate Api Key
-
   public   function authenticateAPIKey($api_key): bool
   {
-
 
     if (empty($api_key)) {
       $_SESSION['err'] = "missing API key";
