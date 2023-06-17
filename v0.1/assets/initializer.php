@@ -1,4 +1,4 @@
-<?php  
+<?php
 header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
 header('Access-Control-Allow-Headers: Content-Type, Authorization, Content-Length, X-Requested-With');
@@ -11,8 +11,13 @@ set_error_handler('ErrorHandler::handleError');
 set_exception_handler('ErrorHandler::handleException');
 
 use Dotenv\Dotenv;
-$dotenv = Dotenv::createImmutable(dirname(__DIR__, 2));
+
+$envMinePath = $_SERVER['DOCUMENT_ROOT'] . '/boiler/env.mine';
+$envMinePath = str_replace('\\', '/', $envMinePath);
+
+$dotenv = Dotenv::createImmutable(dirname($envMinePath),'.env.mine');
 $dotenv->load();
+
 
 $headers = apache_request_headers();
 $authHeader = $headers['Authorization'] ?? "null";
@@ -22,7 +27,7 @@ $db = new Database();
 $auth = new Auth($db);
 
 $authenticateAPIKey = $auth->authenticateAPIKey($token);
-if(!$authenticateAPIKey){
+if (!$authenticateAPIKey) {
     $auth->outputData(false, $_SESSION['err'], null);
     exit;
 }
