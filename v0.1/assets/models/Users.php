@@ -14,7 +14,8 @@ class Users extends SharedModel
             $this->outputData( false, 'Email already exists', null );
             return;
         }
-        $token = ( int ) $this->token();
+        $token = ( int ) Utility::token();
+
         $passHash = password_hash( $data[ 'pword' ], PASSWORD_DEFAULT );
         #  Prepare the fields and values for the insert query
         $fields = [
@@ -38,7 +39,7 @@ class Users extends SharedModel
             $i = 1;
             foreach ( $fields as $value ) {
                 $type = is_int( $value ) ? PDO::PARAM_INT : PDO::PARAM_STR;
-                $stmt->bindValue( $i,  $this->sanitizeInput( $value ), $type );
+                $stmt->bindValue( $i,  ( $value ), $type );
                 $i++;
             }
             $stmt->execute();
@@ -56,6 +57,7 @@ class Users extends SharedModel
             $output  = $this->respondWithInternalError( 'Error: ' . $e->getMessage());
         }
         finally {
+            $stmt  = null;
             $this->conn = null;
 
         }
@@ -223,7 +225,8 @@ class Users extends SharedModel
             return false;
 
         }
-        $token = $this->token();
+        $token = Utility::token();
+
         $passHash = password_hash( $token, PASSWORD_DEFAULT );
 
         if ( !$this->resetPasswordInDB( $passHash, $data[ 'mail' ] ) ) {
