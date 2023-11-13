@@ -5,6 +5,7 @@ $data = (array) json_decode(file_get_contents('php://input'), true);
 $user = new Users($db);
 
 
+
 $validKeys = ['mail'];
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -13,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-if (!$user->validateRequiredParams($data, $validKeys)) {
+if (!Utility::validateRequiredParams($data, $validKeys)) {
     return;
 }
 

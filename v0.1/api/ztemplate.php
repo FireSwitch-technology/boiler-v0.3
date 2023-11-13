@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-if (!$user->validateRequiredParams($data, $validKeys)) {
+if (!Utility::validateRequiredParams($data, $validKeys)) {
     return;
 }
 

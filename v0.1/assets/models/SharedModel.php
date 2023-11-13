@@ -3,118 +3,13 @@
 abstract class SharedModel
  {
 
-    public   $conn;
+    public $conn;
 
     public function __construct( Database $database )
  {
         $this->conn = $database->connect();
     }
 
-    public function validateRequiredParams( $data, $validKeys )
- {
-        $errors = [];
-
-        #   Check for invalid keys
-        $invalidKeys = array_diff( array_keys( $data ), $validKeys );
-        if ( !empty( $invalidKeys ) ) {
-            foreach ( $invalidKeys as $key ) {
-                $errors[] = "$key is not a valid input field";
-            }
-        }
-
-        if ( !empty( $errors ) ) {
-            $this->respondUnprocessableEntity( $errors );
-            return;
-        }
-
-        #   Check for empty fields
-        foreach ( $validKeys as $key ) {
-            if ( empty( $data[ $key ] ) ) {
-                $errors[] = ucfirst( $key ) . ' is required';
-            }
-        }
-        if ( !empty( $errors ) ) {
-            $this->responseToEmptyFields( $errors );
-            return;
-        }
-
-        #   Sanitize input
-        foreach ( $validKeys as $key ) {
-            $data[ $key ] = Utility::sanitizeInput( $data[ $key ] );
-        }
-
-        return $data;
-    }
-
-    public function saveProfileImage( array $profileImage ): array
- {
-        $imageInfo = [];
-
-        #   Get the image file information
-        $profileImageName = $profileImage[ 'name' ];
-        $profileImageTmp = $profileImage[ 'tmp_name' ];
-
-        #   Check if at least profile image file is present
-        if ( !isset( $profileImageName ) || empty( $profileImageName ) ) {
-            http_response_code( 400 );
-            $this->outputData( false, 'Please select an image to upload', null );
-            return null;
-        }
-
-        #   Valid file extensions
-        $validExtensions = [ 'jpg', 'jpeg', 'png', 'gif' ];
-
-        #   Test for profile image file extension
-        if ( isset( $profileImageName ) && !empty( $profileImageName ) ) {
-            $profileImageExt = strtolower( pathinfo( $profileImageName, PATHINFO_EXTENSION ) );
-            if ( !in_array( $profileImageExt, $validExtensions ) ) {
-                http_response_code( 422 );
-                $this->outputData( false, 'Only JPG, JPEG, PNG and GIF files are allowed.', null );
-                return null;
-            } else {
-                #   Save the profile image file
-                $newProfileImageName = time() . '_' . $profileImageName;
-                $profileImagePath = $_SERVER[ 'DOCUMENT_ROOT' ] . '/uploads/' . $newProfileImageName;
-                if ( !file_exists( $profileImagePath ) || !is_readable( $profileImageTmp ) ) {
-                    http_response_code( 422 );
-                    $this->outputData( false, 'Unable to upload the profile image. Please try again later.', null );
-                    return null;
-                } else if ( move_uploaded_file( $profileImageTmp, $profileImagePath ) ) {
-                    $imageInfo[ 'profileImage' ] = $newProfileImageName;
-                } else {
-                    $imageInfo = null;
-                }
-            }
-        }
-        http_response_code( 200 );
-        return $imageInfo;
-    }
-    #  resourceNotFound::Check for id if exists
-
-    private function resourceNotFound( int $id ): void
- {
-
-        echo json_encode( [ 'message' => "Resource with id $id not found" ] );
-    }
-
-    /**
-    * respondUnprocessableEntity alert of errors deteced
-    *
-    * @param array $errors
-    * @return void
-    */
-
-    public function respondUnprocessableEntity( array $errors ): void
- {
-
-        $this->outputData( false,  'Kindly review your request parameters to ensure they comply with our requirements.',  $errors );
-    }
-
-    public function responseToEmptyFields( array $errors ): void
- {
-
-        $this->outputData( false,  'All fields are required',  $errors );
-    }
 
     public function connectToThirdPartyAPI( array $payload, string $url )
  {
@@ -126,10 +21,10 @@ abstract class SharedModel
         curl_setopt( $ch, CURLOPT_POSTFIELDS, json_encode( $payload ) );
 
         $response = curl_exec( $ch );
-
+                                                                                                
         if ( $response === false ) {
             $error = curl_error( $ch );
-            $this->outputData( false, 'Unable to process request, try again later', null );
+            throw new Exception( $error );
         }
 
         curl_close( $ch );
@@ -140,52 +35,59 @@ abstract class SharedModel
     public function respondWithInternalError( $errors ): void
  {
 
-        $this->outputData( false,  'Unable to process request, try again later',  $errors );
+        // $this->outputData( false,  'Unable to process request, try again later',  $errors );
+        ErrorHandler::handleException($errors);
     }
 
     #getUserdata::This method fetches All info related to a user
 
-    public function getUserdata( mixed $identifier )
- {
-        try {
-            $sql = 'SELECT * FROM tblusers WHERE ';
-            if ( filter_var( $identifier, FILTER_VALIDATE_EMAIL ) ) {
-                $sql .= 'mail = :mail';
-            } else if ( is_int( $identifier ) ) {
-                $sql .= 'usertoken = :usertoken';
-            } else {
-                throw new \InvalidArgumentException( 'Invalid identifier type' );
-            }
+   // Your getUserdata function
 
-            $stmt = $this->conn->prepare( $sql );
-            if ( filter_var( $identifier, FILTER_VALIDATE_EMAIL ) ) {
-                $stmt->bindParam( ':mail', $identifier );
-            } else {
-                $stmt->bindParam( ':usertoken', $identifier );
-            }
-            $stmt->execute();
+   public function getUserdata(mixed $identifier)
+   {
+       $response = ['status' => false, 'data' => null, 'message' => null ];
+   
+       try {
+           $sql = 'SELECT * FROM tblusers WHERE ';
+           if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+               $sql .= 'mail = :mail';
+           } else if (is_int($identifier)) {
+               $sql .= 'usertoken = :usertoken';
+           } else {
+               $response['message'] = 'Invalid identifier type';
+           }
+   
+           $stmt = $this->conn->prepare($sql);
+           if (filter_var($identifier, FILTER_VALIDATE_EMAIL)) {
+               $stmt->bindParam(':mail', $identifier);
+           } else {
+               $stmt->bindParam(':usertoken', $identifier);
+           }
+           $stmt->execute();
+   
+           $user = $stmt->fetch(PDO::FETCH_ASSOC);
+           if (empty($user)) {
+               $response['message'] = 'User Does Not Exist';
+           } else {
+               $response['data']  = [
+                   'fname' => $user['name'],
+                   'mail' => $user['mail'],
+                   'usertoken' => $user['usertoken'],
+                   'phone' => $user['phone'],
+               ];
+               $response['status'] = true;
+           }
+   
+       } catch (PDOException $e) {
+           $response['message'] = 'Error retrieving user details: ' . $e->getMessage();
+       } finally {
+           $stmt = null;
+       }
+   
+       return $response;
+   }
+   
 
-            if ( $stmt->rowCount() === 0 ) {
-                $this->outputData( false, 'No user found', null );
-                return;
-            }
-            $user = $stmt->fetch( PDO::FETCH_ASSOC );
-
-            $array = [
-                'fname' => $user[ 'name' ],
-                'mail' => $user[ 'mail' ],
-                'usertoken' => $user[ 'usertoken' ],
-                'phone' => $user[ 'phone' ],
-            ];
-        } catch ( PDOException $e ) {
-            $_SESSION[ 'err' ] = 'Error retrieving user details: ' . $e->getMessage();
-            return false;
-        }
-        finally {
-            $stmt = null;
-        }
-        return $array;
-    }
 
     #authenticateUser:: This method authencticates User data
 
@@ -215,13 +117,61 @@ abstract class SharedModel
         }
     }
 
-    public function outputData( $success = null, $message = null, $data = null )
+
+
+
+
+    
+    public function uploadImage( array $profileImage )
  {
+        $imageInfo = [];
+
+        #   Get the image file information
+        $profileImageName = $profileImage[ 'name' ];
+        $profileImageTmp = $profileImage[ 'tmp_name' ];
+
+        #   Check if at least profile image file is present
+        if ( !isset( $profileImageName ) || empty( $profileImageName ) ) {
+            $this->outputData( false, 'Please select an image to upload', null , 400);
+            return null;
+        }
+
+        #   Valid file extensions
+        $validExtensions = [ 'jpg', 'jpeg', 'png', 'gif' ];
+
+        #   Test for profile image file extension
+        if ( isset( $profileImageName ) && !empty( $profileImageName ) ) {
+            $profileImageExt = strtolower( pathinfo( $profileImageName, PATHINFO_EXTENSION ) );
+            if ( !in_array( $profileImageExt, $validExtensions ) ) {
+                $this->outputData( false, 'Only JPG, JPEG, PNG and GIF files are allowed.', null, 422);
+                return null;
+            } else {
+                #   Save the profile image file
+                $newProfileImageName = time() . '_' . $profileImageName;
+                $profileImagePath = $_SERVER[ 'DOCUMENT_ROOT' ] . '/uploads/' . $newProfileImageName;
+                if ( !file_exists( $profileImagePath ) || !is_readable( $profileImageTmp ) ) {
+                    $this->outputData( false, 'Unable to upload the profile image. Please try again later.', null , 422);
+                    return null;
+                } else if ( move_uploaded_file( $profileImageTmp, $profileImagePath ) ) {
+                    $imageInfo[ 'profileImage' ] = $newProfileImageName;
+                } else {
+                    $imageInfo = null;
+                }
+            }
+        }
+          return  $this->outputData(true, "Image Uploaded",$imageInfo, 201 );
+    }
+   
+
+    public function outputData( $success = null, $message = null, $data = null, $status_code = null)
+ {
+    http_response_code($status_code);
 
         $arr_output = array(
             'success' => $success,
             'message' => $message,
             'data' => $data,
+            'status_code' => $status_code,  
         );
         echo json_encode( $arr_output );
     }

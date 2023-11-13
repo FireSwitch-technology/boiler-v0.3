@@ -26,11 +26,14 @@ $token = (preg_match('/Bearer\s(\S+)/', $authHeader, $matches)) ? $matches[1] : 
 $db = new Database();
 $auth = new Auth($db);
 
-$authenticateAPIKey = $auth->authenticateAPIKey($token);
-if (!$authenticateAPIKey) {
-    $auth->outputData(false, $_SESSION['err'], null);
+
+$authenticationResult = $auth->authenticateAPIKey($token);
+if (!$authenticationResult['authenticated']) {
+    $auth->outputData(false, $authenticationResult['message'], null);
     exit;
 }
 
+// The API key is authenticated; continue with your logic here
+
+
 unset($auth);
-// The API key is valid, continue with your logic here

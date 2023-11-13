@@ -13,17 +13,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-if (!$user->validateRequiredParams($data, $validKeys)) {
+if (!Utility::validateRequiredParams($data, $validKeys)) {
     return;
 }
 
 $getUserdata = $user->getUserdata($data['usertoken']);
-if($getUserdata){
+if(!$getUserdata){
 
     $user->outputData(true, "Fecthed User Data", $getUserdata);
-}else{
-
-    $user->outputData(false, $_SESSION['err'], null);
 }
 
 #Your method should be here

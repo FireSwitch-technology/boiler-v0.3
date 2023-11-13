@@ -9,11 +9,11 @@ class Users extends SharedModel
 
         $phone = ( int ) $data[ 'phone' ];
 
-        $checkIfMailExists = $this->checkIfMailExists( $data[ 'mail' ] );
-        if ( $checkIfMailExists ) {
-            $this->outputData( false, 'Email already exists', null );
-            return;
-        }
+        // $checkIfMailExists = $this->checkIfMailExists( $data[ 'mail' ] );
+        // if ( $checkIfMailExists ) {
+        //     $this->outputData( false, 'Email already exists', null );
+        //     return;
+        // }
         $token = ( int ) Utility::token();
 
         $passHash = password_hash( $data[ 'pword' ], PASSWORD_DEFAULT );
@@ -44,14 +44,12 @@ class Users extends SharedModel
             }
             $stmt->execute();
 
-            $mailer = new Mailer();
 
-            if ( $mailer->sendOTPToken( $data[ 'mail' ], $data[ 'name' ], '123' ) ) {
+            if (Mailer::sendOTPToken( $data[ 'mail' ], $data[ 'name' ], '123' ) ) {
                 unset( $mailer );
             }
 
-            http_response_code( 201 );
-            $output = $this->outputData( true, 'Account created', null );
+            $output = $this->outputData( true, 'Account created', null, 201);
         } catch ( PDOException $e ) {
 
             $output  = $this->respondWithInternalError( 'Error: ' . $e->getMessage());
@@ -85,8 +83,7 @@ class Users extends SharedModel
 
             return $stmt->rowCount();
         } catch ( PDOException $e ) {
-            $_SESSION[ 'err' ] = $e->getMessage();
-            $this->respondWithInternalError($_SESSION[ 'err' ] );
+            $this->respondWithInternalError($e->getMessage());
             return null;
         }
         finally {
@@ -95,23 +92,23 @@ class Users extends SharedModel
         }
     }
 
-    public function tryLogin( $data ):array|bool {
+    public function tryLogin( $data ) {
 
         try {
             $sql = 'SELECT * FROM tblusers WHERE mail = :mail';
             $stmt = $this->conn->prepare( $sql );
             $stmt->bindParam( ':mail', $data[ 'mail' ], PDO::PARAM_STR );
             $stmt->execute();
-            if ( $stmt->rowCount() === 0 ) {
-                $this->outputData( false, 'No user found', null );
-                return false;
-            }
+           
 
             $user = $stmt->fetch( PDO::FETCH_ASSOC );
+            if (count($user) == 0) {
+               return $this->outputData( false, 'No user found', null, 404);
+            }
+
 
             if ( !password_verify( $data[ 'pword' ], $user[ 'pword' ] ) ) {
-                $this->outputData( false, "Incorrect password for $data[mail]", null );
-                return false;
+               return $this->outputData( false, "Incorrect password for $data[mail]", null, 401);
             }
 
             if ( $user ) {
@@ -121,12 +118,10 @@ class Users extends SharedModel
                     'usertoken' => $user[ 'usertoken' ],
                 ];
             }
-            $this->outputData( true, 'Login successful',  $userData );
-            return true;
+           return  $this->outputData( true, 'Login successful',  $userData ,200);
 
         } catch ( PDOException $e ) {
-            $_SESSION[ 'err' ] = $e->getMessage();
-            $this->respondWithInternalError($_SESSION[ 'err' ] );
+            $this->respondWithInternalError($e->getMessage());
         }
         finally {
             $stmt = null;
@@ -148,7 +143,7 @@ class Users extends SharedModel
             }
         } catch ( PDOException $e ) {
             $_SESSION[ 'err' ] = $e->getMessage();
-            $this->respondWithInternalError($_SESSION[ 'err' ] );
+            return false;
         }
         finally {
             $stmt = null;
@@ -157,7 +152,7 @@ class Users extends SharedModel
 
     #Update Password:: This function updates a user Password
 
-    public function updatePassword( array $data ): void
+    public function updatePassword( array $data )
  {
 
         try {
@@ -171,22 +166,23 @@ class Users extends SharedModel
 
                 if ( password_verify( $data[ 'fpword' ], $dbPwd ) ) {
 
-                    if ( !$this->updatePasswordInDB( $passHash, $data[ 'usertoken' ] ) ) {
-                        $this->outputData( false, $_SESSION[ 'err' ], null );
+                  $updatePasswordInDB =   $this->updatePasswordInDB( $passHash, $data[ 'usertoken' ] );
+
+                    if (!$updatePasswordInDB['status']) {
+                        $this->outputData( false, $updatePasswordInDB[ 'message' ], null, 500);
                         return;
                     }
-                    $this->outputData( true, 'Password Updated', null );
+                    $this->outputData( true, 'Password Updated', null, 200);
                     return;
 
                 } else {
 
-                    $this->outputData( false, 'Current password specified is not correct', null );
-                    return;
+                     return $this->outputData( false, 'Current password specified is not correct', null, 401 );
+                   
                 }
             }
         } catch ( PDOException $e ) {
-            $_SESSION[ 'err' ] = $e->getMessage();
-            $this->respondWithInternalError($_SESSION[ 'err' ] );
+            $this->respondWithInternalError($e->getMessage() );
         }
         finally {
             $stmt = null;
@@ -198,31 +194,34 @@ class Users extends SharedModel
 
     # updatePasswordInDB::This function Updates users ppassword....
 
-    private  function updatePasswordInDB( string $pword, int $usertoken ): bool
+    private  function updatePasswordInDB( string $pword, int $usertoken )
  {
+        $response = ['status' => false, 'message' => ''];
+
         try {
             $sql = 'UPDATE tblusers SET pword = :pword WHERE usertoken = :usertoken';
             $stmt = $this->conn->prepare( $sql );
             $stmt->bindParam( ':pword', $pword ,  PDO::PARAM_STR );
             $stmt->bindParam( ':usertoken', $usertoken ,  PDO::PARAM_INT );
             $stmt->execute();
-            return true;
+
+            $response['status'] = true;
         } catch ( PDOException $e ) {
-            $_SESSION[ 'err' ] = $e->getMessage();
-            return false;
+            $response['message'] = $e->getMessage();
         }
         finally {
             $stmt = null;
             $this->conn = null;
         }
+
+        return $response;
     }
 
-    public function forgetPword( array $data ):bool {
+    public function forgetPword( array $data ) {
 
         $checkIfMailExists = $this->checkIfMailExists( $data[ 'mail' ] );
         if ( !$checkIfMailExists ) {
-            $this->outputData( false, 'Email does not exists', null );
-            return false;
+         return  $this->outputData( false, 'Email does not exists', null, 404 );
 
         }
         $token = Utility::token();
@@ -230,18 +229,19 @@ class Users extends SharedModel
         $passHash = password_hash( $token, PASSWORD_DEFAULT );
 
         if ( !$this->resetPasswordInDB( $passHash, $data[ 'mail' ] ) ) {
-            $this->respondWithInternalError( $_SESSION[ 'err' ]);
+           return $this->respondWithInternalError( $_SESSION[ 'err' ]);
 
-            return false;
         }
 
-        $mailer = new Mailer;
         $userData = $this->getUserData( $data[ 'mail' ] );
 
+        if(!$userData['status']){
+           return $this->outputData( false, $userData['message'], null, 500 );
+        }
+
         try {
-            if ( $mailer->sendPasswordToUser( $data[ 'mail' ], $userData[ 'fname' ], $token ) ) {
-                $this->outputData( true, 'Password sent to mail', null );
-                return true;
+            if ( Mailer::sendPasswordToUser( $data[ 'mail' ], $userData['data'][ 'fname' ], $token ) ) {
+                return $this->outputData( true, 'Password sent to mail', null , 200);
 
             }
         } catch ( PDOException $e ) {

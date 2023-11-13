@@ -3,23 +3,20 @@
 class Auth extends SharedModel
 {
 
-  #authenticate Api Key
-  public   function authenticateAPIKey($api_key): bool
-  {
+  public function authenticateAPIKey($api_key): array {
+    $response = ['authenticated' => false, 'message' => ''];
 
     if (empty($api_key)) {
-      $_SESSION['err'] = "missing API key";
-      return false;
+        $response['message'] = 'Missing API key';
+        return $response;
     }
-
 
     if ($api_key !== $_ENV['APP_TOKEN']) {
-
-      $_SESSION['err'] = "No app found";
-      return false;
+        $response['message'] = 'API key is invalid';
+        return $response;
     }
 
-
-    return true;
-  }
+    $response['authenticated'] = true;
+    return $response;
+}
 }

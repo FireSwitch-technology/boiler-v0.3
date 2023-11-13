@@ -17,15 +17,32 @@ class ErrorHandler
      * @param Throwable $exception
      * @return void
      */
-    public static function handleException(Throwable $exception): void
-    {
-        http_response_code(500);
-        
-        echo json_encode([
-            "code" => $exception->getCode(),
-            "message" => $exception->getMessage(),
-            "file" => basename($exception->getFile()),
-            "line" => $exception->getLine()
-        ]);
-    }
+    
+
+     public static function handleException(Throwable $exception): void
+     {
+         $statusCode = 500;
+         $errorCode = $exception->getCode();
+         $errorMessage = "Internal Server Error";
+     
+         if ($exception instanceof \InvalidArgumentException) {
+             $statusCode = 400;
+             $errorMessage = "Bad Request";
+         } elseif ($exception instanceof \RuntimeException) {
+             $statusCode = 403;
+             $errorMessage = "Forbidden";
+         }
+     
+         http_response_code($statusCode);
+     
+         echo json_encode([
+             "status" => "error",
+             "code" => $errorCode,
+             "message" => $exception->getMessage(),
+             "file" => basename($exception->getFile()),
+             "line" => $exception->getLine(),
+            //  "trace" => $exception->getTrace()
+         ]);
+     }
+     
 }

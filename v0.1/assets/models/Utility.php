@@ -135,13 +135,13 @@ class Utility
     #  code...
 
     if (!filter_var($mail, FILTER_VALIDATE_EMAIL)) {
-        return false;
+      return false;
     }
     return true;
   }
 
 
- 
+
 
   #formatDate::This method format date to humna readable format
 
@@ -189,38 +189,118 @@ class Utility
 
   public  static function getMemoryUsage()
   {
-      $mem_usage = memory_get_usage(true);
-      if ($mem_usage < 1024)
-          return $mem_usage . ' bytes';
-      elseif ($mem_usage < 1048576)
-          return round($mem_usage / 1024, 2) . ' KB';
-      else
-          return round($mem_usage / 1048576, 2) . ' MB';
+    $mem_usage = memory_get_usage(true);
+    if ($mem_usage < 1024)
+      return $mem_usage . ' bytes';
+    elseif ($mem_usage < 1048576)
+      return round($mem_usage / 1024, 2) . ' KB';
+    else
+      return round($mem_usage / 1048576, 2) . ' MB';
   }
 
   public static function checkSize()
   {
-      $memory_usage = self::getMemoryUsage();
-      echo 'Memory usage: ' . $memory_usage;
+    $memory_usage = self::getMemoryUsage();
+    echo 'Memory usage: ' . $memory_usage;
   }
 
 
-    /**
-     * sanitizeInput Parameters
-     *
-     * @param [ type ] $input
-     * @return string
-     */
-    public static  function sanitizeInput($input)
-    {
-        # Remove white space from beginning and end of string
-        $input = trim($input);
-        # Remove slashes
-        $input = stripslashes($input);
-        # Convert special characters to HTML entities
-        $input = htmlspecialchars($input, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+  public static function token()
+  {
+    return  mt_rand(0000, 5000);
+  }
 
-        return $input;
+
+  /**
+   * sanitizeInput Parameters
+   *
+   * @param [ type ] $input
+   * @return string
+   */
+  public static  function sanitizeInput($input)
+  {
+    # Remove white space from beginning and end of string
+    $input = trim($input);
+    # Remove slashes
+    $input = stripslashes($input);
+    # Convert special characters to HTML entities
+    $input = htmlspecialchars($input, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+
+    return $input;
+  }
+
+
+  public static function validateRequiredParams($data, $validKeys)
+  {
+    $errors = [];
+
+    #   Check for invalid keys
+    $invalidKeys = array_diff(array_keys($data), $validKeys);
+    if (!empty($invalidKeys)) {
+      foreach ($invalidKeys as $key) {
+        $errors[] = "$key is not a valid input field";
+      }
     }
 
+    if (!empty($errors)) {
+      self::validateRequestParameters($errors);
+      return;
+    }
+
+    #   Check for empty fields
+    foreach ($validKeys as $key) {
+      if (empty($data[$key])) {
+        $errors[] = ucfirst($key) . ' is required';
+      }
+    }
+    if (!empty($errors)) {
+      self::responseToEmptyFields($errors);
+      return;
+    }
+
+    #   Sanitize input
+    foreach ($validKeys as $key) {
+      $data[$key] = self::sanitizeInput($data[$key]);
+    }
+
+    return $data;
+  }
+
+  #  resourceNotFound::Check for id if exists
+
+  private function resourceNotFound(int $id): void
+  {
+
+    echo json_encode(['message' => "Resource with id $id not found"]);
+  }
+
+  /**
+   * validateRequestParameters alert of errors deteced
+   *
+   * @param array $errors
+   * @return void
+   */
+
+  public  static  function validateRequestParameters(array $errors): void
+  {
+
+    self::outputData(false,  'Kindly review your request parameters to ensure they comply with our requirements.',  $errors);
+  }
+
+  public function responseToEmptyFields(array $errors): void
+  {
+
+    self::outputData(false,  'All fields are required',  $errors);
+  }
+
+  public  static function outputData($success = null, $message = null, $data = null)
+  {
+
+    $arr_output = array(
+      'success' => $success,
+      'message' => $message,
+      'data' => $data,
+    );
+    echo json_encode($arr_output);
+  }
 }
