@@ -1,6 +1,6 @@
 <?php
 
-class Users extends SharedModel
+class Users extends Model
  {
 
 

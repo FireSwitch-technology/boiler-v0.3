@@ -1,6 +1,6 @@
 <?php
 
-class Auth extends SharedModel
+class Auth extends Model
 {
 
   public function authenticateAPIKey($api_key): array {

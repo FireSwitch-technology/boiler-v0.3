@@ -1,6 +1,6 @@
 <?php
 
-abstract class SharedModel
+abstract class Model
  {
 
     public $conn;
