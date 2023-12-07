@@ -117,51 +117,47 @@ abstract class SharedModel
         }
     }
 
+#uploadImage:: This method uploads images to the server
+public function uploadImage(array $image): ?array {
+    $imageInfo = array();
 
+    # Get the image file information
+    $imageName = $image['name'];
+    $imageTmp = $image['tmp_name'];
+    # Check if at least a profile image file is present
+    if ((!isset($imageName) || empty($imageName))) {
+        $_SESSION['err'] = "Please select an image to upload";
+        return null;
+    }
 
+    # Valid file extensions
+    $valid_extensions = array('jpg', 'jpeg', 'png', 'gif');
 
-
-    
-    public function uploadImage( array $profileImage )
- {
-        $imageInfo = [];
-
-        #   Get the image file information
-        $profileImageName = $profileImage[ 'name' ];
-        $profileImageTmp = $profileImage[ 'tmp_name' ];
-
-        #   Check if at least profile image file is present
-        if ( !isset( $profileImageName ) || empty( $profileImageName ) ) {
-            $this->outputData( false, 'Please select an image to upload', null , 400);
+    # Test for profile image file extension
+    if (isset($imageName) && !empty($imageName)) {
+        $imageName_ext = strtolower(pathinfo($imageName, PATHINFO_EXTENSION));
+        if (!in_array($imageName_ext, $valid_extensions)) {
+            $_SESSION['err'] = "Only JPG, JPEG, PNG, and GIF files are allowed";
             return null;
-        }
-
-        #   Valid file extensions
-        $validExtensions = [ 'jpg', 'jpeg', 'png', 'gif' ];
-
-        #   Test for profile image file extension
-        if ( isset( $profileImageName ) && !empty( $profileImageName ) ) {
-            $profileImageExt = strtolower( pathinfo( $profileImageName, PATHINFO_EXTENSION ) );
-            if ( !in_array( $profileImageExt, $validExtensions ) ) {
-                $this->outputData( false, 'Only JPG, JPEG, PNG and GIF files are allowed.', null, 422);
+        } else {
+            # Save the property image file
+            $mixImageNameWithTime = time() . '_' . $imageName;
+            $newImageName = $_ENV['APP_NAME'] . '_' . $mixImageNameWithTime;
+            $pathToImageFolder = ($_SERVER['DOCUMENT_ROOT'] . '/uploads/' . $newImageName);
+            if (!file_exists($imageTmp) || !is_readable($imageTmp)) {
+                $_SESSION['err'] = "Unable to upload the image. Please try again later";
                 return null;
+            } else if (move_uploaded_file($imageTmp, $pathToImageFolder)) {
+                $imageInfo['image'] = $newImageName;
+
             } else {
-                #   Save the profile image file
-                $newProfileImageName = time() . '_' . $profileImageName;
-                $profileImagePath = $_SERVER[ 'DOCUMENT_ROOT' ] . '/uploads/' . $newProfileImageName;
-                if ( !file_exists( $profileImagePath ) || !is_readable( $profileImageTmp ) ) {
-                    $this->outputData( false, 'Unable to upload the profile image. Please try again later.', null , 422);
-                    return null;
-                } else if ( move_uploaded_file( $profileImageTmp, $profileImagePath ) ) {
-                    $imageInfo[ 'profileImage' ] = $newProfileImageName;
-                } else {
-                    $imageInfo = null;
-                }
+                $imageName = null;
             }
         }
-          return  $this->outputData(true, "Image Uploaded",$imageInfo, 201 );
     }
-   
+    http_response_code(200);
+    return $imageInfo;
+}
 
     public function outputData( $success = null, $message = null, $data = null, $status_code = null)
  {

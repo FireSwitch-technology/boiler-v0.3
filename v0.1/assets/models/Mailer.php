@@ -21,27 +21,27 @@ class Mailer
         $mail->Password = 'P}TsdpSanRr{';
         $mail->SMTPSecure = 'tls';
         $mail->Port = 587;
-        // Sender information
+        #  Sender information
         $mail->setFrom('no-reply@greenpower.ng', 'Netlight Systems');
-        // Recipient
+        #  Recipient
         $mail->addAddress($email, $fname);
     
-        // Email subject
+        #  Email subject
         $mail->Subject = 'Your OTP Token';
     
-        // Read the HTML content from the file
+        #  Read the HTML content from the file
         $htmlContent = file_get_contents($filePath);
     
-        // Set the email body
+        #  Set the email body
         $mail->msgHTML($htmlContent);
         
     
     
-        // Send the email
+        #  Send the email
         if ($mail->send()) {
-            return true; // Email sent successfully
+            return true; #  Email sent successfully
         } else {
-            return false; // Email sending failed
+            return false; #  Email sending failed
         }
     }
     

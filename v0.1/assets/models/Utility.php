@@ -217,18 +217,95 @@ class Utility
    * @param [ type ] $input
    * @return string
    */
-  public static  function sanitizeInput($input)
-  {
-    # Remove white space from beginning and end of string
-    $input = trim($input);
-    # Remove slashes
-    $input = stripslashes($input);
-    # Convert special characters to HTML entities
-    $input = htmlspecialchars($input, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+  // public static  function sanitizeInput($input)
+  // {
+  //   # Remove white space from beginning and end of string
+  //   $input = trim($input);
+  //   # Remove slashes
+  //   $input = stripslashes($input);
+  //   # Convert special characters to HTML entities
+  //   $input = htmlspecialchars($input, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 
-    return $input;
+  //   return $input;
+  // }
+
+
+
+  private static  function sanitizeInput($input) {
+    // Check if the input is an array
+    if (is_array($input)) {
+        // Validate and sanitize each element in the array
+        foreach ($input as &$element) {
+            // Check if the element is not null before applying trim
+            if ($element !== null) {
+                // Remove white space from beginning and end of each element
+                $element = trim($element);
+                // Remove slashes
+                $element = stripslashes($element);
+                // Convert special characters to HTML entities
+                $element = htmlspecialchars($element, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            }
+        }
+        unset($element); // unset to avoid potential side effects
+
+        return $input;
+    }
+
+    // For non-array input, continue with the original sanitization process
+    // Check if the input is not null before applying trim
+    if ($input !== null) {
+        // Remove white space from beginning and end of string
+        $input = trim($input);
+        // Remove slashes
+        $input = stripslashes($input);
+        // Convert special characters to HTML entities
+        $input = htmlspecialchars($input, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+
+    return $input ?? "";
+}
+
+
+
+#validateFileUpload:: This method validates all images on the platform
+public static function validateFileUpload($validKeys, $fieldName) {
+  // Initialize the $errors array
+  $errors = [];
+
+  $invalidKeys = array_diff(array_keys($_FILES), $validKeys);
+  if (!empty($invalidKeys)) {
+      foreach ($invalidKeys as $key) {
+          $errors[] = "$key is not a valid input field";
+      }
+
+      if (!empty($errors)) {
+          static::validateRequestParameters($errors);
+          return false;
+      }
   }
 
+  # Check for required fields
+  if (empty($_FILES[$fieldName]['name'])) {
+      $errors[] = "$fieldName is required";
+  } else {
+
+      # Check file type (extension)
+      $allowedExtensions = ['jpeg', 'png'];
+      $fileName = $_FILES[$fieldName]['name'];
+      $fileExtension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+      if (!in_array($fileExtension, $allowedExtensions)) {
+          $errors[] = 'Invalid file format. Only JPEG and PNG images are allowed.';
+      }
+  }
+
+  if (!empty($errors)) {
+      static::validateRequestParameters($errors);
+      return false;
+  }
+
+  return true;
+}
 
   public static function validateRequiredParams($data, $validKeys)
   {
