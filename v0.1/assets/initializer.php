@@ -29,7 +29,7 @@ $auth = new Auth($db);
 
 $authenticationResult = $auth->authenticateAPIKey($token);
 if (!$authenticationResult['authenticated']) {
-    $auth->outputData(false, $authenticationResult['message'], null);
+    $auth->outputData(false, $authenticationResult['message'], null, 401);
     exit;
 }
 
