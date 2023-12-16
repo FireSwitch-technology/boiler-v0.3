@@ -11,7 +11,7 @@ class Auth extends Model
         return $response;
     }
 
-    if ($api_key !== $_ENV['APP_TOKEN']) {
+    if ($api_key != $_ENV['APP_TOKEN']) {
         $response['message'] = 'API key is invalid';
         return $response;
     }

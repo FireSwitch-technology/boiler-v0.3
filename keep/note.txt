@@ -1,0 +1,11 @@
+-- Change data type of id in tblcategory to BIGINT
+ALTER TABLE `tblcategory`
+MODIFY COLUMN `id` BIGINT;
+
+-- Add foreign key constraint
+ALTER TABLE `tblproduct`
+ADD CONSTRAINT `product_category`
+FOREIGN KEY (`product_category`)
+REFERENCES `tblcategory`(`id`)
+ON DELETE NO ACTION
+ON UPDATE NO ACTION;
